@@ -471,22 +471,27 @@ def main():
             # Donut chart of nucleotide percentages
             st.markdown("##### Nucleotide Composition Donut")
             if total > 0:
-                percentages = (counts / total * 100).round(2)
+                counts = counts.reset_index()
+                counts.columns = ["Nucleotide", "Count"]
+                counts["Percent"] = (counts["Count"] / counts["Count"].sum() * 100).round(1)
                 donut_fig = px.pie(
-                    values=percentages.values,
-                    names=percentages.index,
-                    hole=0.65,
-                    color_discrete_sequence=px.colors.sequential.Viridis,
+                    counts,
+                    values="Count",
+                    names="Nucleotide",
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.sequential.Blues,
+                    title="Nucleotide Composition",
                 )
-                donut_fig.update_layout(
-                    title="Nucleotide Composition (A / C / G / T)",
-                    template="plotly_dark",
-                    showlegend=True,
-                )
+                donut_fig.update_traces(pull=[0.05, 0, 0, 0], textinfo="label+percent")
+                donut_fig.update_layout(template="plotly_white", legend_title_text="Nucleotide")
                 st.plotly_chart(donut_fig, width="stretch")
+                st.markdown(
+                    "<div style='font-size:0.85rem;color:#1f3a70;'>Legend: A, T, C, G counts and percentages shown on chart slices.</div>",
+                    unsafe_allow_html=True,
+                )
 
             # Optional: retain GC density heatmap for a lab-panel feel
-            st.markdown("##### GC Density Heatmap (10 × 10)")
+            st.markdown("##### Gene Thermal Stability Map")
             if len(seq) > 0:
                 gc_matrix = np.zeros((10, 10))
                 length = len(seq)
@@ -500,17 +505,24 @@ def main():
                     r, c = divmod(idx, 10)
                     gc_matrix[r, c] = gc_pct
 
-                heatmap_fig = px.imshow(
-                    gc_matrix,
-                    color_continuous_scale="Viridis",
-                    origin="upper",
-                    labels={"color": "GC %"},
+                heatmap_fig = go.Figure(
+                    go.Heatmap(
+                        z=gc_matrix,
+                        colorscale="Magma",
+                        showscale=True,
+                        hovertemplate="Segment (%{x}, %{y}): %{z:.1f}% GC<extra></extra>",
+                        xgap=2,
+                        ygap=2,
+                    )
                 )
                 heatmap_fig.update_layout(
-                    title="GC Density Heatmap (higher = more G/C)",
+                    template="plotly_white",
+                    paper_bgcolor="#fafbff",
+                    plot_bgcolor="#fafbff",
+                    title="Gene Thermal Stability Map",
                     xaxis_title="Segment column",
                     yaxis_title="Segment row",
-                    template="plotly_dark",
+                    margin=dict(t=30, l=30, r=30, b=30),
                 )
                 st.plotly_chart(heatmap_fig, width="stretch")
 
@@ -549,17 +561,23 @@ def main():
                     # Mark first n_mismatch positions as mismatches (schematic)
                     mismatch_matrix[i, :n_mismatch] = 0.0
 
-                mismatch_fig = px.imshow(
-                    mismatch_matrix,
-                    color_continuous_scale=[(0.0, "red"), (1.0, "#1f2937")],
-                    origin="upper",
-                    labels={"color": "Match"},
-                    aspect="auto",
+                mismatch_fig = go.Figure(
+                    go.Heatmap(
+                        z=mismatch_matrix,
+                        colorscale=[[0.0, "#ffb3b3"], [0.5, "#ff4d4d"], [1.0, "#7f0000"]],
+                        zmin=0,
+                        zmax=1,
+                        opacity=0.6,
+                        showscale=False,
+                        hoverinfo='z',
+                    )
                 )
-                mismatch_fig.update_coloraxes(
-                    cmin=0,
-                    cmax=1,
-                    showscale=False,
+                mismatch_fig.update_layout(
+                    title="Sequence Mismatches (glowing mismatch regions)",
+                    template="plotly_white",
+                    paper_bgcolor="#f5f7fb",
+                    plot_bgcolor="#f5f7fb",
+                    margin=dict(t=35, l=30, r=30, b=30),
                 )
                 mismatch_fig.update_yaxes(
                     tickmode="array",
@@ -570,10 +588,6 @@ def main():
                 mismatch_fig.update_xaxes(
                     title="Aligned position (schematic)",
                     showticklabels=False,
-                )
-                mismatch_fig.update_layout(
-                    title="Sequence Mismatches (red = mismatch, dark = match)",
-                    template="plotly_dark",
                 )
                 st.plotly_chart(mismatch_fig, width="stretch")
         else:
