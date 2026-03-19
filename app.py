@@ -259,9 +259,13 @@ def main():
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@400;600&display=swap');
         html, body, [class*="css"] {
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: 'Open Sans', sans-serif;
             background: #FDFDFD;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Montserrat', sans-serif;
         }
         .block-container {
             padding: 1.25rem 1.25rem 2rem;
@@ -286,10 +290,15 @@ def main():
         }
         .hero h1 { margin:0; color:#0b3c7f; font-size:2rem; letter-spacing:0.2px; }
         .hero p { margin:0.2rem 0 0; color:#2f4f7d; font-size:0.92rem; }
-        .metric-row { background: rgba(255,255,255,0.58); border-radius:14px; border:1px solid rgba(88, 132, 224, 0.2); box-shadow:0 0 0 1px rgba(255,255,255,0.45), 0 10px 25px rgba(10, 55, 120, 0.06); padding:0.5rem; display:flex; gap:0.45rem; margin-bottom:1rem; }
-        .metric-pill { background: rgba(255,255,255,0.74); border:1px solid rgba(110,138,216,0.24); border-radius:12px; padding:0.6rem 0.7rem; flex:1; min-width:130px; }
-        .metric-label { font-size:0.72rem; letter-spacing:0.3px; color:#4b5c82; text-transform:uppercase; margin:0; }
-        .metric-value { font-size:1.25rem; font-weight:800; color:#0e2f68; margin:0; }
+        .metric-row { display:flex; gap:0.5rem; margin-bottom:0.55rem; }
+        .metric-pill { background:#ffffff; border:1px solid rgba(88, 166, 255, 0.3); border-radius:12px; padding:0.45rem 0.55rem; flex:1; min-width:130px; box-shadow:0 8px 20px rgba(20,43,104,0.05); }
+        .metric-label { font-size:0.68rem; letter-spacing:0.44px; color:#5e6b94; text-transform:uppercase; margin:0; font-weight:600; font-family:'Open Sans', sans-serif; }
+        .metric-value { font-size:48px; font-weight:800; color:#153e82; margin:0; font-family:'Montserrat', sans-serif; line-height:1; }
+        .metric-note { font-size:0.76rem; color:#4861a1; margin-top:0.15rem; }
+        .path-card { background:#161b22; border-left:4px solid #dc2626; border-radius:10px; padding:0.7rem; margin-bottom:0.45rem; color:#f3f4f6; }
+        .path-variant { font-family:'Courier New', monospace; font-size:0.95rem; margin:0; font-weight:700; }
+        .path-condition { font-size:0.88rem; color:#dbeafe; margin:0.22rem 0; }
+        .path-significance { font-size:0.8rem; color:#ff8f8f; margin:0; }
         .spec-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.45rem; margin-top:0.6rem; }
         .spec-pill { background:#f4f7ff; border:1px solid #dbe4fd; border-radius:10px; padding:0.45rem 0.55rem; color:#1f3570; }
         .spec-label { font-size:0.7rem; color:#5f6d90; margin:0; }
@@ -391,17 +400,14 @@ def main():
 
         variants = selected_gene.get("variants", []) or []
         if variants:
-            pathology_data = [
-                {
-                    "Variant": v.get("variant", "—"),
-                    "Condition": v.get("condition", "—"),
-                    "Significance": v.get("significance", "—"),
-                    "Note": v.get("note", "—"),
-                }
-                for v in variants
-            ]
             st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.35rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>🧬 Clinical Variant Analysis</div>", unsafe_allow_html=True)
-            st.dataframe(pd.DataFrame(pathology_data), use_container_width=True)
+            for v in variants:
+                sig = v.get("significance", "Unknown")
+                border_color = "#dc2626" if sig.lower() == "pathogenic" else "#2e7d32"
+                st.markdown(
+                    f"<div class='path-card' style='border-left:4px solid {border_color};'><p class='path-variant'>{v.get('variant','—')}</p><p class='path-condition'>Condition: {v.get('condition','—')}</p><p class='path-significance'>Significance: {sig}</p><p style='margin:0.15rem 0 0; color:#cad4e8;'>Note: {v.get('note','—')}</p></div>",
+                    unsafe_allow_html=True,
+                )
             st.markdown("</div>", unsafe_allow_html=True)
 
     with tab_viz:
@@ -453,7 +459,7 @@ def main():
                                 },
                             )
                         )
-                        gauge_fig.update_layout(template="plotly_white", height=260)
+                        gauge_fig.update_layout(template="plotly_white", height=260, font=dict(family='Open Sans, sans-serif', color='#0f3a74'))
                         st.plotly_chart(gauge_fig, use_container_width=True)
 
                 with compose_col2:
@@ -471,7 +477,7 @@ def main():
                             title="Nucleotide Composition",
                         )
                         donut_fig.update_traces(pull=[0.03, 0, 0, 0], textinfo="label+percent")
-                        donut_fig.update_layout(template="plotly_white", legend_title_text="Nucleotide", margin=dict(t=40, l=0, r=0, b=0))
+                        donut_fig.update_layout(template="plotly_white", legend_title_text="Nucleotide", margin=dict(t=40, l=0, r=0, b=0), font=dict(family='Open Sans, sans-serif', color='#0f3a74'))
                         st.plotly_chart(donut_fig, use_container_width=True)
                         st.markdown(
                             "<div style='font-size:0.85rem;color:#1f3a70;'>Legend: A, T, C, G counts and percentages shown on chart slices.</div>",
@@ -510,6 +516,7 @@ def main():
                     title="GC Stability Map",
                     xaxis_title="Segment column",
                     yaxis_title="Segment row",
+                    font=dict(family='Open Sans, sans-serif', color='#0f3a74'),
                     margin=dict(t=35, l=30, r=30, b=30),
                 )
                 st.plotly_chart(heatmap_fig, use_container_width=True)
@@ -566,6 +573,7 @@ def main():
                     template="plotly_white",
                     paper_bgcolor="#f5f7fb",
                     plot_bgcolor="#f5f7fb",
+                    font=dict(family='Open Sans, sans-serif', color='#0f3a74'),
                     margin=dict(t=35, l=30, r=30, b=30),
                 )
                 mismatch_fig.update_yaxes(
@@ -620,7 +628,7 @@ def main():
                             template="plotly_white",
                         )
                         freq_fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-                        freq_fig.update_layout(yaxis_title="Percent", margin=dict(l=10,r=10,t=30,b=10))
+                        freq_fig.update_layout(yaxis_title="Percent", margin=dict(l=10,r=10,t=30,b=10), font=dict(family='Open Sans, sans-serif', color='#0f3a74'))
                         st.plotly_chart(freq_fig, use_container_width=True)
 
                         counts = aa_series.value_counts().reindex(["A", "C", "G", "T"]).fillna(0)
