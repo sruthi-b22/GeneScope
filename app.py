@@ -388,31 +388,44 @@ def main():
             st.markdown(f"<div class='spec-pill'><p class='spec-label'>Condition</p><p class='spec-value'>{selected_gene.get('disease','—')}</p></div>", unsafe_allow_html=True)
             st.markdown("</div></div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='soft-card'><h5 class='card-title'>Function & Sequence</h5>", unsafe_allow_html=True)
-        if selected_gene.get("go_function"):
-            st.markdown(selected_gene["go_function"])
-        else:
-            st.markdown(selected_gene.get("description", ""))
+            st.markdown("<div class='soft-card'>", unsafe_allow_html=True)
+            st.markdown("<h5 class='card-title'>Function & Sequence</h5>", unsafe_allow_html=True)
+            if selected_gene.get("go_function"):
+                st.markdown(selected_gene["go_function"])
+            else:
+                st.markdown(selected_gene.get("description", ""))
 
-        st.markdown("<div style='margin-top:0.5rem;'><strong>DNA Sequence</strong></div>", unsafe_allow_html=True)
-        if selected_gene.get("refseq_mrna"):
-            st.caption(
-                f"Sequence source: RefSeq {selected_gene['refseq_mrna']} ({selected_gene.get('sequence_note','').strip()})"
-            )
-        st.text_area("Sequence", value=seq, height=170, key="dna_seq", help="Scroll to view long sequences", placeholder="No DNA sequence available", disabled=True)
-        st.write(f"Length: **{len(seq)}** bases")
-
-        variants = selected_gene.get("variants", []) or []
-        if variants:
-            st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.35rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>🧬 Clinical Variant Analysis</div>", unsafe_allow_html=True)
-            for v in variants:
-                sig = v.get("significance", "Unknown")
-                border_color = "#dc2626" if sig.lower() == "pathogenic" else "#2e7d32"
-                st.markdown(
-                    f"<div class='path-card' style='border-left:4px solid {border_color};'><p class='path-variant'>{v.get('variant','—')}</p><p class='path-condition'>Condition: {v.get('condition','—')}</p><p class='path-significance'>Significance: {sig}</p><p style='margin:0.15rem 0 0; color:#cad4e8;'>Note: {v.get('note','—')}</p></div>",
-                    unsafe_allow_html=True,
+            st.markdown("<div style='margin-top:0.5rem;'><strong>DNA Sequence</strong></div>", unsafe_allow_html=True)
+            if selected_gene.get("refseq_mrna"):
+                st.caption(
+                    f"Sequence source: RefSeq {selected_gene['refseq_mrna']} ({selected_gene.get('sequence_note','').strip()})"
                 )
+
+            with st.expander("View Raw DNA Sequence", expanded=False):
+                st.code(seq, language="text")
+
+            st.markdown("<div style='padding:0.35rem 0.4rem; font-size:0.82rem; color:#4f5f7d; background:#f5f7ff; border-radius:8px; margin-top:0.35rem; width:fit-content;'>Length: " + str(len(seq)) + " bases</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
+
+            variants = selected_gene.get("variants", []) or []
+            if variants:
+                st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.35rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>🧬 Clinical Variant Analysis</div>", unsafe_allow_html=True)
+                df_vars = pd.DataFrame(variants).reset_index(drop=True)
+                cols = st.columns(2)
+                for idx, row in df_vars.iterrows():
+                    with cols[idx % 2]:
+                        significance = str(row.get("significance", "Unknown"))
+                        border_color = "#dc2626" if significance.lower() == "pathogenic" else "#2e7d32"
+                        st.markdown(
+                            f"<div style='border:1px solid #dbe4fd; border-radius:12px; background:#fff; padding:0.8rem; margin-bottom:0.5rem; font-family:Open Sans, sans-serif;'>"
+                            f"<div style='font-family:Montserrat, sans-serif; font-size:0.95rem; font-weight:700; color:#11396e; margin-bottom:0.25rem;'>{row.get('variant', 'Variant')}</div>"
+                            f"<div style='font-size:0.85rem; color:#3f4d6e; margin-bottom:0.2rem;'>Condition: {row.get('condition', 'N/A')}</div>"
+                            f"<div style='font-size:0.82rem; color:#3e4d6f; margin-bottom:0.2rem;'>Note: {row.get('note', '—')}</div>"
+                            f"<div style='font-size:0.8rem; font-weight:600; color:{border_color};'>Significance: {significance}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
+                st.markdown("</div>", unsafe_allow_html=True)
 
     with tab_viz:
         st.markdown("#### High‑Tech GC & Nucleotide Visualization")
