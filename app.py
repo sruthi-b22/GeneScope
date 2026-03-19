@@ -237,6 +237,7 @@ def show_3d_protein(pdb_id: str):
     """
     Renders a 3D protein structure by converting py3Dmol view to HTML and embedding it in Streamlit.
     """
+    st.subheader(f"3D Protein Structure: {pdb_id}")
     view = py3Dmol.view(query=f"pdb:{pdb_id}", height=500, width=800)
     view.setStyle({"cartoon": {"color": "spectrum"}})
     view.addSurface(py3Dmol.VDW, {"opacity": 0.2, "color": "white"})
