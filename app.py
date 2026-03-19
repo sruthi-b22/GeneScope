@@ -271,10 +271,11 @@ def main():
             background: #ffffff;
             border-radius: 20px;
             border: 1px solid rgba(15, 23, 42, 0.08);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.05);
-            padding: 1rem;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
             margin-bottom: 1rem;
         }
+        .card-title { font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 700; color:#0b3f80; }
         .hero {
             background: linear-gradient(180deg, #E8F4FF 0%, #FFFFFF 100%);
             border-radius: 20px;
@@ -293,8 +294,8 @@ def main():
         }
         .kpi .value { font-size: 1.58rem; font-weight: 800; color: #005ea5; margin-bottom: 0.1rem; }
         .kpi .label { color:#154077; font-weight:600; font-size:0.88rem; margin: 0; }
-        .fast-facts { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }
-        .fact-pill { border-radius: 999px; background:#eef5ff; border:1px solid #d5e5ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; }
+        .fast-facts { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; margin-bottom:0.8rem; }
+        .fact-pill { border-radius: 999px; background:#eef5ff; border:1px solid #d5e5ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; font-weight:600; }
         .viewer-frame { background: rgba(255,255,255,0.72); border-radius: 15px; border: 1px solid #dceafe; backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); max-width: 820px; margin: 0 auto; }
         .viewer-legend { color: #1f3d72; font-size: 0.82rem; margin-top: 0.35rem; text-align: center; }
         .section-header { font-weight: 700; color:#09306f; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.5rem; }
@@ -302,6 +303,8 @@ def main():
         .info-card { background:#f7fbff; border-left:4px solid #4b82ff; border-radius:14px; padding:0.8rem; margin-bottom:0.65rem; }
         .center-content { display:flex; justify-content:center; }
         .center-main { max-width: 900px; width:100%; }
+        .pathvariant { background:#ffffff; border:1px solid #dae4f4; border-radius:10px; padding:0.65rem; margin-bottom:0.5rem; width:100%; }
+        .timeline-header { font-weight: 700; margin-bottom:0.4rem; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -379,7 +382,8 @@ def main():
     )
 
     with tab_seq:
-        st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:start;'><div><h4 style='margin:0 0 0.25rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69;'>Fast facts for this gene and its protein.</p></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:start; gap:0.6rem;'><div><h4 style='margin:0 0 0.25rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69;'>Fast facts for this gene and its protein.</p></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='fast-facts'>", unsafe_allow_html=True)
         if selected_gene.get("protein_name"):
             st.markdown(f"<span class='fact-pill'>Protein: {selected_gene['protein_name']}</span>", unsafe_allow_html=True)
         if selected_gene.get("subcellular_location"):
@@ -388,9 +392,9 @@ def main():
             st.markdown(f"<span class='fact-pill'>Category: {selected_gene.get('category')}</span>", unsafe_allow_html=True)
         if selected_gene.get("disease"):
             st.markdown(f"<span class='fact-pill'>Condition: {selected_gene.get('disease')}</span>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='soft-card'><h5 style='margin-top:0;color:#0f4f8b;'>Function & Sequence</h5>", unsafe_allow_html=True)
+        st.markdown("<div class='soft-card'><h5 class='card-title'>Function & Sequence</h5>", unsafe_allow_html=True)
         if selected_gene.get("go_function"):
             st.markdown(selected_gene["go_function"])
         else:
@@ -406,14 +410,14 @@ def main():
 
         variants = selected_gene.get("variants", []) or []
         if variants:
-            st.markdown("<div class='soft-card'><h5 style='margin:0 0 0.35rem 0; color:#0f4f8b;'>Pathology & Biotech</h5>", unsafe_allow_html=True)
+            st.markdown("<div class='soft-card'><h5 class='card-title'>Pathology & Biotech</h5>", unsafe_allow_html=True)
             for v in variants:
                 variant = v.get("variant", "No variant")
                 condition = v.get("condition", "No condition")
                 note = v.get("note", "")
                 significance = v.get("significance", "")
                 st.markdown(
-                    f"<div class='path-row'><div><strong>{variant}</strong> — {condition} <span style='color:#4a6f9a;'>{significance}</span></div><div class='arrow'>→</div></div><div style='margin-left:1rem;color:#374151;font-size:0.9rem;'>" + note + "</div>",
+                    f"<div class='pathvariant'><div style='font-weight:700;color:#0f3b75;'>{variant}</div><div style='margin-top:0.2rem;color:#1f3357;'><strong>Condition:</strong> {condition}</div><div style='margin-top:0.15rem;font-size:0.88rem;color:#2f4368;'><strong>Significance:</strong> {significance}</div><div style='margin-top:0.35rem;font-size:0.9rem;color:#404e66;'>{note}</div></div>",
                     unsafe_allow_html=True,
                 )
             st.markdown("</div>", unsafe_allow_html=True)
@@ -431,67 +435,70 @@ def main():
             counts = series.value_counts().reindex(["A", "C", "G", "T"]).fillna(0)
             total = counts.sum()
 
-            # GC gauge chart
-            st.markdown("##### GC Content Gauge")
-            if total > 0:
-                if gc > 60:
-                    gauge_color = "red"
-                    gauge_label = "High Stability"
-                elif gc >= 40:
-                    gauge_color = "green"
-                    gauge_label = "Normal"
-                else:
-                    gauge_color = "blue"
-                    gauge_label = "Low GC"
+            st.markdown("<div class='soft-card'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;'><div><h5 class='card-title'>Composition Card</h5><p style='margin:0;color:#40577b;font-size:0.9rem;'>GC stability gauge and nucleotide composition in a unified card.</p></div></div>", unsafe_allow_html=True)
+            with st.container():
+                compose_col1, compose_col2 = st.columns([1, 1])
+                with compose_col1:
+                    st.markdown("### GC Content Gauge")
+                    if total > 0:
+                        if gc > 60:
+                            gauge_color = "red"
+                            gauge_label = "High Stability"
+                        elif gc >= 40:
+                            gauge_color = "green"
+                            gauge_label = "Normal"
+                        else:
+                            gauge_color = "blue"
+                            gauge_label = "Low GC"
 
-                gauge_fig = go.Figure(
-                    go.Indicator(
-                        mode="gauge+number",
-                        value=gc,
-                        title={"text": f"GC % – {gauge_label}"},
-                        gauge={
-                            "axis": {"range": [0, 100]},
-                            "bar": {"color": gauge_color},
-                            "steps": [
-                                {"range": [0, 40], "color": "rgba(37, 99, 235, 0.4)"},
-                                {"range": [40, 60], "color": "rgba(34, 197, 94, 0.4)"},
-                                {"range": [60, 100], "color": "rgba(239, 68, 68, 0.4)"},
-                            ],
-                            "threshold": {
-                                "line": {"color": gauge_color, "width": 4},
-                                "thickness": 0.75,
-                                "value": gc,
-                            },
-                        },
-                    )
-                )
-                gauge_fig.update_layout(template="plotly_dark", height=260)
-                st.plotly_chart(gauge_fig, width="stretch")
+                        gauge_fig = go.Figure(
+                            go.Indicator(
+                                mode="gauge+number",
+                                value=gc,
+                                title={"text": f"GC % – {gauge_label}"},
+                                gauge={
+                                    "axis": {"range": [0, 100]},
+                                    "bar": {"color": gauge_color},
+                                    "steps": [
+                                        {"range": [0, 40], "color": "rgba(37, 99, 235, 0.35)"},
+                                        {"range": [40, 60], "color": "rgba(34, 197, 94, 0.35)"},
+                                        {"range": [60, 100], "color": "rgba(239, 68, 68, 0.35)"},
+                                    ],
+                                    "threshold": {
+                                        "line": {"color": gauge_color, "width": 4},
+                                        "thickness": 0.75,
+                                        "value": gc,
+                                    },
+                                },
+                            )
+                        )
+                        gauge_fig.update_layout(template="plotly_white", height=260)
+                        st.plotly_chart(gauge_fig, use_container_width=True)
 
-            # Donut chart of nucleotide percentages
-            st.markdown("##### Nucleotide Composition Donut")
-            if total > 0:
-                counts = counts.reset_index()
-                counts.columns = ["Nucleotide", "Count"]
-                counts["Percent"] = (counts["Count"] / counts["Count"].sum() * 100).round(1)
-                donut_fig = px.pie(
-                    counts,
-                    values="Count",
-                    names="Nucleotide",
-                    hole=0.5,
-                    color_discrete_sequence=px.colors.sequential.Blues,
-                    title="Nucleotide Composition",
-                )
-                donut_fig.update_traces(pull=[0.05, 0, 0, 0], textinfo="label+percent")
-                donut_fig.update_layout(template="plotly_white", legend_title_text="Nucleotide")
-                st.plotly_chart(donut_fig, width="stretch")
-                st.markdown(
-                    "<div style='font-size:0.85rem;color:#1f3a70;'>Legend: A, T, C, G counts and percentages shown on chart slices.</div>",
-                    unsafe_allow_html=True,
-                )
+                with compose_col2:
+                    st.markdown("### Nucleotide Composition Donut")
+                    if total > 0:
+                        counts = counts.reset_index()
+                        counts.columns = ["Nucleotide", "Count"]
+                        counts["Percent"] = (counts["Count"] / counts["Count"].sum() * 100).round(1)
+                        donut_fig = px.pie(
+                            counts,
+                            values="Count",
+                            names="Nucleotide",
+                            hole=0.5,
+                            color_discrete_sequence=["#2f6fd3", "#7fc0ff", "#2f9f9f", "#82c07f"],
+                            title="Nucleotide Composition",
+                        )
+                        donut_fig.update_traces(pull=[0.03, 0, 0, 0], textinfo="label+percent")
+                        donut_fig.update_layout(template="plotly_white", legend_title_text="Nucleotide", margin=dict(t=40, l=0, r=0, b=0))
+                        st.plotly_chart(donut_fig, use_container_width=True)
+                        st.markdown(
+                            "<div style='font-size:0.85rem;color:#1f3a70;'>Legend: A, T, C, G counts and percentages shown on chart slices.</div>",
+                            unsafe_allow_html=True,
+                        )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-            # Optional: retain GC density heatmap for a lab-panel feel
-            st.markdown("##### Gene Thermal Stability Map")
+            st.markdown("<div class='soft-card'><div style='display:flex;justify-content:space-between;align-items:center; margin-bottom:0.4rem;'><div><h5 class='card-title'>Sequence Stability Analysis</h5><p style='margin:0;color:#40577b;font-size:0.9rem;'>Heatmap of GC density across sequence segments.</p></div></div>", unsafe_allow_html=True)
             if len(seq) > 0:
                 gc_matrix = np.zeros((10, 10))
                 length = len(seq)
@@ -519,12 +526,13 @@ def main():
                     template="plotly_white",
                     paper_bgcolor="#fafbff",
                     plot_bgcolor="#fafbff",
-                    title="Gene Thermal Stability Map",
+                    title="GC Stability Map",
                     xaxis_title="Segment column",
                     yaxis_title="Segment row",
-                    margin=dict(t=30, l=30, r=30, b=30),
+                    margin=dict(t=35, l=30, r=30, b=30),
                 )
-                st.plotly_chart(heatmap_fig, width="stretch")
+                st.plotly_chart(heatmap_fig, width="100%")
+            st.markdown("</div>", unsafe_allow_html=True)
 
         # BLAST-style conservation summary
         st.markdown("#### BLAST Analysis – Sequence Conservation")
@@ -602,7 +610,8 @@ def main():
         )
 
     with tab_trans:
-        st.markdown("<div class='section-header'>⚙️ Protein Translation and 3D Analysis</div><div class='section-divider'></div>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown("<div style='background:#eef4ff;border-left:4px solid #4b82ff;border-radius:10px;padding:0.6rem 0.9rem;margin-bottom:0.6rem;'><strong style='color:#103e7d;'>3D Visualization and Protein Translation</strong></div>", unsafe_allow_html=True)
         with st.container():
             col1, col2, col3 = st.columns([1, 4, 1])
             with col2:
