@@ -3,4 +3,5 @@ pandas
 plotly
 stmol
 py3Dmol
+ipython_genutils
 numpy

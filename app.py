@@ -1,6 +1,17 @@
-import pandas as pd
-import streamlit as st
+import subprocess
+import sys
 
+# Force install the missing "adapter" if it's not found
+try:
+    import ipython_genutils
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "ipython_genutils"])
+
+import streamlit as st
+import streamlit.components.v1 as components
+import py3Dmol
+
+import pandas as pd
 from genes import GENE_DB
 
 try:
@@ -11,14 +22,6 @@ except ImportError:  # Plotly not available in this environment
     np = None
     px = None
     go = None
-
-# 3D molecular viewer imports (py3Dmol + stmol)
-try:
-    import py3Dmol
-    from stmol import showmol
-except ImportError:
-    py3Dmol = None
-    showmol = None
 
 
 # Approximate cross-species DNA identity percentages for selected genes
@@ -230,25 +233,18 @@ def average_hydrophobicity(protein: str) -> float:
     return total / count
 
 
-def render_protein(pdb_id: str, width: int = 400, height: int = 400):
+def show_3d_protein(pdb_id: str):
     """
-    Render a 3D ribbon/cartoon diagram for a given PDB ID
-    using py3Dmol + stmol, fetching the structure from the
-    RCSB Protein Data Bank.
+    Renders a 3D protein structure by converting py3Dmol view to HTML and embedding it in Streamlit.
     """
-    if py3Dmol is None or showmol is None:
-        st.info(
-            "3D structure viewer is unavailable. Install `py3Dmol` and `stmol` "
-            "in your environment to enable protein visualization."
-        )
-        return
-
-    view = py3Dmol.view(query=f"pdb:{pdb_id}")
-    # Ribbon / cartoon representation with spectrum coloring
-    view.setStyle({"cartoon": {"color": "spectrum", "style": "oval"}})
-    view.setBackgroundColor("#0d1117")
+    view = py3Dmol.view(query=f"pdb:{pdb_id}", height=500, width=800)
+    view.setStyle({"cartoon": {"color": "spectrum"}})
+    view.addSurface(py3Dmol.VDW, {"opacity": 0.2, "color": "white"})
+    view.spin(True)
     view.zoomTo()
-    showmol(view, width=width, height=height)
+
+    html_blob = view._make_html()
+    components.html(html_blob, height=550, width=850)
 
 
 def main():
@@ -403,7 +399,7 @@ def main():
             # Reorder columns if present
             cols = [c for c in ["variant", "significance", "condition", "note"] if c in df.columns]
             df = df[cols]
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width='stretch')
 
     with tab_viz:
         st.markdown("#### High‑Tech GC & Nucleotide Visualization")
@@ -596,11 +592,9 @@ def main():
                     template="plotly_dark",
                 )
                 st.plotly_chart(freq_fig, width="stretch")
-            if pdb_id:
-                st.markdown("#### 3D Structure (Ribbon / Cartoon)")
-                render_protein(pdb_id)
-            else:
-                st.caption("No PDB structure mapping configured for this gene.")
+            st.markdown("#### 3D Structure (Ribbon / Cartoon)")
+            target_pdb = pdb_id or "4HHB"
+            show_3d_protein(target_pdb)
         else:
             st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
 
