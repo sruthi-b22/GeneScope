@@ -255,68 +255,68 @@ def show_3d_protein(pdb_id: str):
 def main():
     st.set_page_config(page_title="GeneScope Biotech Dashboard", layout="wide")
 
-    # Global styling / Biotech dashboard theme
+    # Global styling / soft UI theme
     st.markdown(
         """
         <style>
-        html, body, [class*="css"]  {
-            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background-color: #f0f2f6;
+        html, body, [class*="css"] {
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #FDFDFD;
         }
         .block-container {
-            padding-top: 2.5rem;
-            padding-bottom: 2.5rem;
-            padding-left: 3rem;
-            padding-right: 3rem;
+            padding: 1.25rem 1.25rem 2rem;
+            max-width: 1300px;
         }
-        /* Metric cards - dark techy cards */
-        div[data-testid="metric-container"] {
-            background-color: #111827;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.45);
-            border: 1px solid #1f2937;
+        .soft-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
-        div[data-testid="metric-container"] label {
-            color: #9ca3af;
+        .hero {
+            background: linear-gradient(180deg, #E8F4FF 0%, #FFFFFF 100%);
+            border-radius: 20px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(74, 132, 255, 0.18);
         }
-        div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-            color: #f9fafb;
+        .hero h1 { margin:0; color:#0C3D75; font-size:2rem; }
+        .hero p { margin:0.2rem 0 0; color:#325d93; font-size:1rem; }
+        .kpi {
+            background: #f7fbff;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 94, 165, 0.12);
+            padding: 0.7rem;
+            margin-bottom: 0.5rem;
         }
+        .kpi .value { font-size: 1.58rem; font-weight: 800; color: #005ea5; margin-bottom: 0.1rem; }
+        .kpi .label { color:#154077; font-weight:600; font-size:0.88rem; margin: 0; }
+        .fast-facts { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }
+        .fact-pill { border-radius: 999px; background:#eef5ff; border:1px solid #d5e5ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; }
+        .viewer-frame { background: rgba(255,255,255,0.65); border-radius: 16px; border: 1px solid rgba(29, 78, 216, 0.2); backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .path-table tr { border-bottom: 1px solid rgba(32, 71, 127, 0.1); }
+        .path-row { padding: 0.55rem 0; display:flex; justify-content:space-between; align-items:center; }
+        .path-row .arrow { font-weight:700; color:#005ea5; margin-left:0.4rem; }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    # Header styled loosely after UniProt entry page
     st.markdown(
         """
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.5rem;">
-          <div>
-            <h1 style="color:#1f4e79; margin-bottom:0;">GeneScope Biotech Dashboard</h1>
-            <p style="color:#6c757d; font-size:0.95rem; margin-top:0.25rem;">
-              Explore gene sequences, composition, protein function, and clinical variation.
-            </p>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <span style="
-              display:inline-flex;
-              align-items:center;
-              gap:0.35rem;
-              background:linear-gradient(135deg,#fbbf24,#f59e0b);
-              color:#111827;
-              padding:0.25rem 0.6rem;
-              border-radius:999px;
-              font-size:0.8rem;
-              font-weight:600;
-              box-shadow:0 0 0 1px rgba(180,83,9,0.4);
-            ">
-              <span style="width:0.55rem;height:0.55rem;border-radius:999px;background:#fef3c7;border:1px solid rgba(120,53,15,0.7);"></span>
-              Status: Reviewed
-            </span>
+        <div class='hero'>
+          <div style='display:flex;justify-content:space-between;align-items:center; gap:1rem;'>
+            <div>
+              <h1>GeneScope Biotech Dashboard</h1>
+              <p>Hybrid UniProt depth with a modern Evolve Bio interface for interactive gene and protein exploration.</p>
+            </div>
+            <div style='font-size:0.8rem;padding:0.35rem 0.65rem;border-radius:999px;background:#eaf3ff;color:#0b3d7d;border:1px solid #c9dcff;'>
+              Live Mode
+            </div>
           </div>
         </div>
-        <hr>
         """,
         unsafe_allow_html=True,
     )
@@ -346,27 +346,22 @@ def main():
         tm_wallace_value = wallace_tm(seq)
         pdb_id = selected_gene.get("pdb_id", "")
 
-    # Summary section with dark "cards"
-    st.markdown("### Summary")
+    # Summary section with soft UI cards
+    st.markdown("<div class='soft-card'> <h3 style='margin:0 0 0.35rem 0; color:#0c3d75;'>Gene Snapshot</h3>", unsafe_allow_html=True)
     with st.container():
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Gene ID", selected_gene["gene"])
-        with col2:
-            st.metric("Category", selected_gene.get("category", "N/A"))
-        with col3:
-            st.metric("GC Content", f"{gc:.2f} %")
-        with col4:
-            st.metric("Length (bp)", f"{len(seq)}")
+        cols = st.columns(4)
+        vals = [
+            ("🧬 Gene", selected_gene["gene"], "#005ea5"),
+            ("🧪 Category", selected_gene.get("category", "N/A"), "#0f5aa0"),
+            ("% GC", f"{gc:.2f}%", "#005ea5"),
+            ("Length", f"{len(seq)} bp", "#0f5aa0"),
+        ]
+        for c, (label, value, color) in zip(cols, vals):
+            c.markdown(f"<div class='kpi'><div class='value' style='color:{color};'>{value}</div><div class='label'>{label}</div></div>", unsafe_allow_html=True)
 
-        st.markdown("#### Scientific Metrics")
-        col5, col6, col7 = st.columns(3)
-        with col5:
-            st.metric("Molecular Weight (g/mol)", f"{mw:,.0f}")
-        with col6:
-            st.metric("Tm (Wallace rule, °C)", f"{tm_wallace_value:.1f}")
-        with col7:
-            st.metric("Tm (empirical, °C)", f"{tm_empirical:.1f}")
+    st.markdown("<div style='margin-top:0.5rem;'><div style='display:flex;gap:0.5rem;'><div class='kpi' style='flex:1;'><div class='value'>{mw:,.0f}</div><p class='label'>Molecular Weight (Da)</p></div><div class='kpi' style='flex:1;'><div class='value'>{tm_wallace_value:.1f}</div><p class='label'>Wallace Tm (°C)</p></div><div class='kpi' style='flex:1;'><div class='value'>{tm_empirical:.1f}</div><p class='label'>Empirical Tm (°C)</p></div></div></div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Tabs for different views
     tab_seq, tab_viz, tab_trans = st.tabs(
@@ -374,21 +369,24 @@ def main():
     )
 
     with tab_seq:
-        st.markdown("#### Entry overview")
+        st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:start;'><div><h4 style='margin:0 0 0.25rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69;'>Fast facts for this gene and its protein.</p></div></div>", unsafe_allow_html=True)
         if selected_gene.get("protein_name"):
-            st.markdown(f"**Protein name:** {selected_gene['protein_name']}")
-        if selected_gene.get("disease"):
-            st.markdown(f"**Associated disease:** {selected_gene['disease']}")
+            st.markdown(f"<span class='fact-pill'>Protein: {selected_gene['protein_name']}</span>", unsafe_allow_html=True)
         if selected_gene.get("subcellular_location"):
-            st.markdown(f"**Subcellular location:** {selected_gene['subcellular_location']}")
+            st.markdown(f"<span class='fact-pill'>Location: {selected_gene['subcellular_location']}</span>", unsafe_allow_html=True)
+        if selected_gene.get("category"):
+            st.markdown(f"<span class='fact-pill'>Category: {selected_gene.get('category')}</span>", unsafe_allow_html=True)
+        if selected_gene.get("disease"):
+            st.markdown(f"<span class='fact-pill'>Condition: {selected_gene.get('disease')}</span>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("#### Function")
+        st.markdown("<div class='soft-card'><h5 style='margin-top:0;color:#0f4f8b;'>Function & Sequence</h5>", unsafe_allow_html=True)
         if selected_gene.get("go_function"):
             st.markdown(selected_gene["go_function"])
         else:
             st.markdown(selected_gene.get("description", ""))
 
-        st.markdown("#### DNA Sequence")
+        st.markdown("<div style='margin-top:0.5rem;'><strong>DNA Sequence</strong></div>", unsafe_allow_html=True)
         if selected_gene.get("refseq_mrna"):
             st.caption(
                 f"Sequence source: RefSeq {selected_gene['refseq_mrna']} ({selected_gene.get('sequence_note','').strip()})"
@@ -396,15 +394,20 @@ def main():
         st.code(seq, language="text")
         st.write(f"Length: **{len(seq)}** bases")
 
-        # Pathology & Biotech table (variants)
         variants = selected_gene.get("variants", []) or []
         if variants:
-            st.markdown("#### Pathology & Biotech")
-            df = pd.DataFrame(variants)
-            # Reorder columns if present
-            cols = [c for c in ["variant", "significance", "condition", "note"] if c in df.columns]
-            df = df[cols]
-            st.dataframe(df, width='stretch')
+            st.markdown("<div class='soft-card'><h5 style='margin:0 0 0.35rem 0; color:#0f4f8b;'>Pathology & Biotech</h5>", unsafe_allow_html=True)
+            for v in variants:
+                variant = v.get("variant", "No variant")
+                condition = v.get("condition", "No condition")
+                note = v.get("note", "")
+                significance = v.get("significance", "")
+                st.markdown(
+                    f"<div class='path-row'><div><strong>{variant}</strong> — {condition} <span style='color:#4a6f9a;'>{significance}</span></div><div class='arrow'>→</div></div><div style='margin-left:1rem;color:#374151;font-size:0.9rem;'>" + note + "</div>",
+                    unsafe_allow_html=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with tab_viz:
         st.markdown("#### High‑Tech GC & Nucleotide Visualization")
@@ -597,9 +600,10 @@ def main():
                     template="plotly_dark",
                 )
                 st.plotly_chart(freq_fig, width="stretch")
-            st.markdown("#### 3D Structure (Ribbon / Cartoon)")
+            st.markdown("<div class='soft-card'><h4 style='margin:0 0 0.45rem 0; color:#0f4f8b;'>3D Structure (Ribbon / Cartoon)</h4><div class='viewer-frame'>", unsafe_allow_html=True)
             target_pdb = pdb_id or "4HHB"
             show_3d_protein(target_pdb)
+            st.markdown("</div></div>", unsafe_allow_html=True)
         else:
             st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
 
