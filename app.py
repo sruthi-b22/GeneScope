@@ -286,7 +286,6 @@ def main():
         }
         .hero h1 { margin:0; color:#0b3c7f; font-size:2rem; letter-spacing:0.2px; }
         .hero p { margin:0.2rem 0 0; color:#2f4f7d; font-size:0.92rem; }
-        .hero-live { font-size:0.75rem; border-radius:500px; background:#e8f0ff; border:1px solid #c9dbff; padding:0.2rem 0.55rem; color:#17407e; font-weight:600; display:inline-flex; align-items:center; gap:0.25rem; }
         .metric-row { background: rgba(255,255,255,0.58); border-radius:14px; border:1px solid rgba(88, 132, 224, 0.2); box-shadow:0 0 0 1px rgba(255,255,255,0.45), 0 10px 25px rgba(10, 55, 120, 0.06); padding:0.5rem; display:flex; gap:0.45rem; margin-bottom:1rem; }
         .metric-pill { background: rgba(255,255,255,0.74); border:1px solid rgba(110,138,216,0.24); border-radius:12px; padding:0.6rem 0.7rem; flex:1; min-width:130px; }
         .metric-label { font-size:0.72rem; letter-spacing:0.3px; color:#4b5c82; text-transform:uppercase; margin:0; }
@@ -312,13 +311,9 @@ def main():
 
     st.markdown(
         """
-        <div class='hero'>
-          <div style='display:flex;justify-content:space-between;align-items:center; gap:1rem;'>
-            <div>
-              <h1>🧬 GeneScope Biotech Dashboard <span style='font-size:0.8rem; background:#dbe9ff;border-radius:999px;padding:0.15rem 0.45rem; color:#0e3c84; font-weight:700; margin-left:0.35rem;'>Live</span></h1>
-            </div>
-            <div class='hero-live'>● Live</div>
-          </div>
+        <div style='background:#0d2a66; border-radius:14px; padding:0.8rem 1rem; margin-bottom:1rem;'>
+          <h1 style='margin:0; color:white; font-size:2rem; font-weight:800;'>🧬 GeneScope Biotech Dashboard</h1>
+          <div style='color:#d6ddff; font-size:0.9rem; margin-top:0.2rem;'>Interactive gene analytics and protein modeling.</div>
         </div>
         """,
         unsafe_allow_html=True,
