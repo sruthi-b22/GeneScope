@@ -241,7 +241,11 @@ def show_3d_protein(pdb_id: str):
     view = py3Dmol.view(query=f"pdb:{pdb_id}", height=500, width=800)
     view.setStyle({"cartoon": {"color": "spectrum"}})
     view.addSurface(py3Dmol.VDW, {"opacity": 0.2, "color": "white"})
-    view.spin(True)
+    view.setHoverable({}, True,
+        """function(atom,viewer,tooltip,container) { if(!atom.label) { atom.label = viewer.addLabel(atom.resn + ':' + atom.resi, {position: atom, backgroundColor: 'mintcream', fontColor:'black'}); } }""",
+        """function(atom,viewer) { if(atom.label) { viewer.removeLabel(atom.label); delete atom.label; } }"""
+    )
+    view.spin(False)
     view.zoomTo()
 
     html_blob = view._make_html()
