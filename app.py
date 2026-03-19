@@ -277,25 +277,25 @@ def main():
         }
         .card-title { font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 700; color:#0b3f80; }
         .hero {
-            background: linear-gradient(180deg, #E8F4FF 0%, #FFFFFF 100%);
-            border-radius: 20px;
+            background: linear-gradient(135deg, #E6F0FF 0%, #F8FBFF 100%);
+            border-radius: 18px;
             padding: 1rem 1.2rem;
             margin-bottom: 1rem;
-            border: 1px solid rgba(74, 132, 255, 0.18);
+            border: 1px solid rgba(71, 118, 209, 0.2);
+            box-shadow: 0 8px 24px rgba(25, 68, 145, 0.08);
         }
-        .hero h1 { margin:0; color:#0C3D75; font-size:2rem; }
-        .hero p { margin:0.2rem 0 0; color:#325d93; font-size:1rem; }
-        .kpi {
-            background: #f7fbff;
-            border-radius: 14px;
-            border: 1px solid rgba(0, 94, 165, 0.12);
-            padding: 0.7rem;
-            margin-bottom: 0.5rem;
-        }
-        .kpi .value { font-size: 1.58rem; font-weight: 800; color: #005ea5; margin-bottom: 0.1rem; }
-        .kpi .label { color:#154077; font-weight:600; font-size:0.88rem; margin: 0; }
-        .fast-facts { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; margin-bottom:0.8rem; }
-        .fact-pill { border-radius: 999px; background:#eef5ff; border:1px solid #d5e5ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; font-weight:600; }
+        .hero h1 { margin:0; color:#0b3c7f; font-size:2rem; letter-spacing:0.2px; }
+        .hero p { margin:0.2rem 0 0; color:#2f4f7d; font-size:0.92rem; }
+        .hero-live { font-size:0.75rem; border-radius:500px; background:#e8f0ff; border:1px solid #c9dbff; padding:0.2rem 0.55rem; color:#17407e; font-weight:600; display:inline-flex; align-items:center; gap:0.25rem; }
+        .metric-row { background: rgba(255,255,255,0.58); border-radius:14px; border:1px solid rgba(88, 132, 224, 0.2); box-shadow:0 0 0 1px rgba(255,255,255,0.45), 0 10px 25px rgba(10, 55, 120, 0.06); padding:0.5rem; display:flex; gap:0.45rem; margin-bottom:1rem; }
+        .metric-pill { background: rgba(255,255,255,0.74); border:1px solid rgba(110,138,216,0.24); border-radius:12px; padding:0.6rem 0.7rem; flex:1; min-width:130px; }
+        .metric-label { font-size:0.72rem; letter-spacing:0.3px; color:#4b5c82; text-transform:uppercase; margin:0; }
+        .metric-value { font-size:1.25rem; font-weight:800; color:#0e2f68; margin:0; }
+        .spec-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.45rem; margin-top:0.6rem; }
+        .spec-pill { background:#f4f7ff; border:1px solid #dbe4fd; border-radius:10px; padding:0.45rem 0.55rem; color:#1f3570; }
+        .spec-label { font-size:0.7rem; color:#5f6d90; margin:0; }
+        .spec-value { font-size:0.95rem; font-weight:700; margin:0; }
+        .fact-pill { border-radius: 12px; background:#eef5ff; border:1px solid #d4e3ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; font-weight:600; }
         .viewer-frame { background: rgba(255,255,255,0.72); border-radius: 15px; border: 1px solid #dceafe; backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); max-width: 820px; margin: 0 auto; }
         .viewer-legend { color: #1f3d72; font-size: 0.82rem; margin-top: 0.35rem; text-align: center; }
         .section-header { font-weight: 700; color:#09306f; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.5rem; }
@@ -315,12 +315,9 @@ def main():
         <div class='hero'>
           <div style='display:flex;justify-content:space-between;align-items:center; gap:1rem;'>
             <div>
-              <h1>GeneScope Biotech Dashboard</h1>
-              <p>Hybrid UniProt depth with a modern Evolve Bio interface for interactive gene and protein exploration.</p>
+              <h1>🧬 GeneScope Biotech Dashboard <span style='font-size:0.8rem; background:#dbe9ff;border-radius:999px;padding:0.15rem 0.45rem; color:#0e3c84; font-weight:700; margin-left:0.35rem;'>Live</span></h1>
             </div>
-            <div style='font-size:0.8rem;padding:0.35rem 0.65rem;border-radius:999px;background:#eaf3ff;color:#0b3d7d;border:1px solid #c9dcff;'>
-              Live Mode
-            </div>
+            <div class='hero-live'>● Live</div>
           </div>
         </div>
         """,
@@ -353,28 +350,19 @@ def main():
         tm_wallace_value = wallace_tm(seq)
         pdb_id = selected_gene.get("pdb_id", "")
 
-    # Summary section with soft UI cards
-    st.markdown("<div class='soft-card'> <h3 style='margin:0 0 0.35rem 0; color:#0c3d75;'>Gene Snapshot</h3>", unsafe_allow_html=True)
-    with st.container():
-        cols = st.columns([1, 1, 1, 1])
-        vals = [
-            ("🧬 Gene", selected_gene.get("gene", "—"), "#002147"),
-            ("🧪 Category", selected_gene.get("category", "—"), "#002147"),
-            ("% GC", f"{gc:.2f}%" if gc is not None else "—", "#002147"),
-            ("Length", f"{len(seq)} bp" if seq else "—", "#002147"),
-        ]
-        for c, (label, value, color) in zip(cols, vals):
-            c.markdown(f"<div class='kpi'><div class='value' style='color:{color};'>{value}</div><div class='label'>{label}</div></div>", unsafe_allow_html=True)
+    # Summary section with modern horizontal metric bar
+    st.markdown("<div class='soft-card'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;'><div style='font-weight:700;color:#0d3f7e;font-size:1.1rem;'>Gene Snapshot</div><div style='font-size:0.82rem; color:#3f4f75;'>Live insights</div></div><div class='metric-row'>" , unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Gene</div><div class='metric-value'>{selected_gene.get('gene','—')}</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Category</div><div class='metric-value'>{selected_gene.get('category','—')}</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>% GC</div><div class='metric-value'>{gc:.2f}%</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Length</div><div class='metric-value'>{len(seq)} bp</div></div>", unsafe_allow_html=True)
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
-    mw_str = f"{mw:,.0f}" if mw is not None else "—"
-    tm_wallace_str = f"{tm_wallace_value:.1f}" if tm_wallace_value is not None else "—"
-    tm_empirical_str = f"{tm_empirical:.1f}" if tm_empirical is not None else "—"
-    st.markdown(
-        f"<div style='margin-top:0.5rem;display:flex;gap:0.5rem;'><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{mw_str}</div><p class='label'>Molecular Weight (Da)</p></div><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{tm_wallace_str}</div><p class='label'>Wallace Tm (°C)</p></div><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{tm_empirical_str}</div><p class='label'>Empirical Tm (°C)</p></div></div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;'><div style='font-weight:700;color:#0d3f7e;'>Thermodynamic Metrics</div></div><div class='metric-row'>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Molecular Weight</div><div class='metric-value'>{mw:,.0f} Da</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Wallace Tm</div><div class='metric-value'>{tm_wallace_value:.1f} °C</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Empirical Tm</div><div class='metric-value'>{tm_empirical:.1f} °C</div></div>", unsafe_allow_html=True)
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Main centered body and tabs for different views
     main_left, main_center, main_right = st.columns([1, 5, 1])
@@ -384,18 +372,12 @@ def main():
         )
 
         with tab_seq:
-        st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:start; gap:0.6rem;'><div><h4 style='margin:0 0 0.25rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69;'>Fast facts for this gene and its protein.</p></div></div>", unsafe_allow_html=True)
-        left_col, right_col = st.columns(2)
-        with left_col:
-            if selected_gene.get("protein_name"):
-                st.markdown(f"<span class='fact-pill'>Protein: {selected_gene['protein_name']}</span>", unsafe_allow_html=True)
-            if selected_gene.get("subcellular_location"):
-                st.markdown(f"<span class='fact-pill'>Location: {selected_gene['subcellular_location']}</span>", unsafe_allow_html=True)
-        with right_col:
-            if selected_gene.get("category"):
-                st.markdown(f"<span class='fact-pill'>Category: {selected_gene.get('category')}</span>", unsafe_allow_html=True)
-            if selected_gene.get("disease"):
-                st.markdown(f"<span class='fact-pill'>Condition: {selected_gene.get('disease')}</span>", unsafe_allow_html=True)
+            st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;'><div><h4 style='margin:0 0 0.15rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69; font-size:0.9rem;'>Quick gene metadata in spec format.</p></div></div><div class='spec-grid'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='spec-pill'><p class='spec-label'>Protein</p><p class='spec-value'>{selected_gene.get('protein_name','—')}</p></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='spec-pill'><p class='spec-label'>Location</p><p class='spec-value'>{selected_gene.get('subcellular_location','—')}</p></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='spec-pill'><p class='spec-label'>Category</p><p class='spec-value'>{selected_gene.get('category','—')}</p></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='spec-pill'><p class='spec-label'>Condition</p><p class='spec-value'>{selected_gene.get('disease','—')}</p></div>", unsafe_allow_html=True)
+            st.markdown("</div></div>", unsafe_allow_html=True)
 
         st.markdown("<div class='soft-card'><h5 class='card-title'>Function & Sequence</h5>", unsafe_allow_html=True)
         if selected_gene.get("go_function"):
