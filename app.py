@@ -350,19 +350,20 @@ def main():
         tm_wallace_value = wallace_tm(seq)
         pdb_id = selected_gene.get("pdb_id", "")
 
-    # Summary section with modern horizontal metric bar
-    st.markdown("<div class='soft-card'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;'><div style='font-weight:700;color:#0d3f7e;font-size:1.1rem;'>Gene Snapshot</div><div style='font-size:0.82rem; color:#3f4f75;'>Live insights</div></div><div class='metric-row'>" , unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Gene</div><div class='metric-value'>{selected_gene.get('gene','—')}</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Category</div><div class='metric-value'>{selected_gene.get('category','—')}</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>% GC</div><div class='metric-value'>{gc:.2f}%</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Length</div><div class='metric-value'>{len(seq)} bp</div></div>", unsafe_allow_html=True)
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    # Summary section with compressed metric cards
+    with st.container():
+        st.markdown("<div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.6rem; color:#0f4f8b; font-weight:700; font-size:1.1rem;'>Gene Snapshot</div>", unsafe_allow_html=True)
+        mark_col1, mark_col2, mark_col3, mark_col4 = st.columns(4)
+        mark_col1.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Gene</div><div style='font-weight:700; color:#143f7f;'>{selected_gene.get('gene','—')}</div></div>", unsafe_allow_html=True)
+        mark_col2.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Category</div><div style='font-weight:700; color:#143f7f;'>{selected_gene.get('category','—')}</div></div>", unsafe_allow_html=True)
+        mark_col3.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>% GC</div><div style='font-weight:700; color:#143f7f;'>{gc:.2f}%</div></div>", unsafe_allow_html=True)
+        mark_col4.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Length</div><div style='font-weight:700; color:#143f7f;'>{len(seq)} bp</div></div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;'><div style='font-weight:700;color:#0d3f7e;'>Thermodynamic Metrics</div></div><div class='metric-row'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Molecular Weight</div><div class='metric-value'>{mw:,.0f} Da</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Wallace Tm</div><div class='metric-value'>{tm_wallace_value:.1f} °C</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-pill'><div class='metric-label'>Empirical Tm</div><div class='metric-value'>{tm_empirical:.1f} °C</div></div>", unsafe_allow_html=True)
-    st.markdown("</div></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:0.45rem; border-left:4px solid #3b6fd3; padding-left:0.45rem; color:#0f4f8b; font-weight:700; font-size:1.1rem;'>Thermodynamic Metrics</div>", unsafe_allow_html=True)
+        th1, th2, th3 = st.columns(3)
+        th1.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Molecular Weight</div><div style='font-weight:700; color:#143f7f;'>{mw:,.0f} Da</div></div>", unsafe_allow_html=True)
+        th2.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Wallace Tm</div><div style='font-weight:700; color:#143f7f;'>{tm_wallace_value:.1f} °C</div></div>", unsafe_allow_html=True)
+        th3.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Empirical Tm</div><div style='font-weight:700; color:#143f7f;'>{tm_empirical:.1f} °C</div></div>", unsafe_allow_html=True)
 
     # Main centered body and tabs for different views
     main_left, main_center, main_right = st.columns([1, 5, 1])
@@ -395,17 +396,16 @@ def main():
 
         variants = selected_gene.get("variants", []) or []
         if variants:
-            st.markdown("<div class='soft-card'><h5 class='card-title'>Pathology & Biotech</h5>", unsafe_allow_html=True)
+            st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.5rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>Pathology & Biotech</div>", unsafe_allow_html=True)
+            path_rows = []
             for v in variants:
-                variant = v.get("variant", "No variant")
-                condition = v.get("condition", "No condition")
-                note = v.get("note", "")
-                significance = v.get("significance", "")
-                with st.container():
-                    st.markdown(
-                        f"<div style='border:1px solid #dbe4f0;border-radius:10px;padding:0.75rem;background:#ffffff;word-wrap:break-word;'><div style='font-weight:700;color:#0f3b75;'>{variant}</div><div style='margin-top:0.2rem;color:#1f3357;'><strong>Condition:</strong> {condition}</div><div style='margin-top:0.15rem;font-size:0.88rem;color:#2f4368;'><strong>Significance:</strong> {significance}</div><div style='margin-top:0.35rem;font-size:0.9rem;color:#404e66;white-space:normal;'>{note}</div></div>",
-                        unsafe_allow_html=True,
-                    )
+                path_rows.append({
+                    "Variant": v.get("variant", "—"),
+                    "Condition": v.get("condition", "—"),
+                    "Significance": v.get("significance", "—"),
+                    "Note": v.get("note", "—"),
+                })
+            st.dataframe(pd.DataFrame(path_rows), use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
