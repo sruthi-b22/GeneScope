@@ -268,16 +268,20 @@ def main():
             font-family: 'Montserrat', sans-serif;
         }
         .block-container {
-            padding: 1.25rem 1.25rem 2rem;
-            max-width: 1300px;
+            padding: 0.5rem 0.75rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .soft-card {
             background: #ffffff;
-            border-radius: 20px;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
-            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
             margin-bottom: 1rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .card-title { font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 700; color:#0b3f80; }
         .hero {
@@ -331,18 +335,18 @@ def main():
     genes = load_genes()
     gene_ids = [g["gene"] for g in genes]
 
-    # Sidebar: gene selection + project info
-    with st.sidebar:
-        st.markdown("<div style='padding-top:0.2rem;'></div>", unsafe_allow_html=True)
-        st.header("Gene Selection")
-        selected_id = st.selectbox("Select a gene (searchable)", options=gene_ids, index=0)
-
-        st.markdown("<div style='margin:0.65rem 0; border-top:1px solid #dbe4f0;'></div>", unsafe_allow_html=True)
-        st.subheader("Project Info")
-        st.write(
-            "This Biotech Dashboard focuses on GC content, nucleotide composition, "
-            "and protein translation for a curated panel of well-known human genes."
-        )
+    # Top navigation header with gene selection
+    with st.container():
+        st.markdown("<div style='max-width:1200px; margin:0 auto; padding:0.75rem 0; display:flex; gap:1rem; align-items:center;'>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([2, 3, 1])
+        with col1:
+            st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.8rem; font-weight:800; color:#0b2f66;'>🧬 GeneScope</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3c4665; font-size:0.88rem;'>Gene + structural biology analytics</div>", unsafe_allow_html=True)
+        with col2:
+            selected_id = st.selectbox("Select a gene", options=gene_ids, index=0, label_visibility='visible')
+        with col3:
+            st.markdown("<div style='text-align:right; font-family:Open Sans, sans-serif; color:#3f4c70;'>About</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Loading animation when (re)computing for a selected gene
     with st.spinner("Loading gene profile..."):
