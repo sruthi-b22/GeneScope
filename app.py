@@ -326,10 +326,11 @@ def main():
 
     # Sidebar: gene selection + project info
     with st.sidebar:
+        st.markdown("<div style='padding-top:0.2rem;'></div>", unsafe_allow_html=True)
         st.header("Gene Selection")
         selected_id = st.selectbox("Select a gene (searchable)", options=gene_ids, index=0)
 
-        st.markdown("---")
+        st.markdown("<div style='margin:0.65rem 0; border-top:1px solid #dbe4f0;'></div>", unsafe_allow_html=True)
         st.subheader("Project Info")
         st.write(
             "This Biotech Dashboard focuses on GC content, nucleotide composition, "
@@ -349,17 +350,23 @@ def main():
     # Summary section with soft UI cards
     st.markdown("<div class='soft-card'> <h3 style='margin:0 0 0.35rem 0; color:#0c3d75;'>Gene Snapshot</h3>", unsafe_allow_html=True)
     with st.container():
-        cols = st.columns(4)
+        cols = st.columns([1, 1, 1, 1])
         vals = [
-            ("🧬 Gene", selected_gene["gene"], "#005ea5"),
-            ("🧪 Category", selected_gene.get("category", "N/A"), "#0f5aa0"),
-            ("% GC", f"{gc:.2f}%", "#005ea5"),
-            ("Length", f"{len(seq)} bp", "#0f5aa0"),
+            ("🧬 Gene", selected_gene.get("gene", "—"), "#002147"),
+            ("🧪 Category", selected_gene.get("category", "—"), "#002147"),
+            ("% GC", f"{gc:.2f}%" if gc is not None else "—", "#002147"),
+            ("Length", f"{len(seq)} bp" if seq else "—", "#002147"),
         ]
         for c, (label, value, color) in zip(cols, vals):
             c.markdown(f"<div class='kpi'><div class='value' style='color:{color};'>{value}</div><div class='label'>{label}</div></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top:0.5rem;'><div style='display:flex;gap:0.5rem;'><div class='kpi' style='flex:1;'><div class='value'>{mw:,.0f}</div><p class='label'>Molecular Weight (Da)</p></div><div class='kpi' style='flex:1;'><div class='value'>{tm_wallace_value:.1f}</div><p class='label'>Wallace Tm (°C)</p></div><div class='kpi' style='flex:1;'><div class='value'>{tm_empirical:.1f}</div><p class='label'>Empirical Tm (°C)</p></div></div></div>", unsafe_allow_html=True)
+    mw_str = f"{mw:,.0f}" if mw is not None else "—"
+    tm_wallace_str = f"{tm_wallace_value:.1f}" if tm_wallace_value is not None else "—"
+    tm_empirical_str = f"{tm_empirical:.1f}" if tm_empirical is not None else "—"
+    st.markdown(
+        f"<div style='margin-top:0.5rem;display:flex;gap:0.5rem;'><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{mw_str}</div><p class='label'>Molecular Weight (Da)</p></div><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{tm_wallace_str}</div><p class='label'>Wallace Tm (°C)</p></div><div class='kpi' style='flex:1;'><div class='value' style='color:#002147;'>{tm_empirical_str}</div><p class='label'>Empirical Tm (°C)</p></div></div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
