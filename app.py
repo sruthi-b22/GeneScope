@@ -295,10 +295,13 @@ def main():
         .kpi .label { color:#154077; font-weight:600; font-size:0.88rem; margin: 0; }
         .fast-facts { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }
         .fact-pill { border-radius: 999px; background:#eef5ff; border:1px solid #d5e5ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; }
-        .viewer-frame { background: rgba(255,255,255,0.65); border-radius: 16px; border: 1px solid rgba(29, 78, 216, 0.2); backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-        .path-table tr { border-bottom: 1px solid rgba(32, 71, 127, 0.1); }
-        .path-row { padding: 0.55rem 0; display:flex; justify-content:space-between; align-items:center; }
-        .path-row .arrow { font-weight:700; color:#005ea5; margin-left:0.4rem; }
+        .viewer-frame { background: rgba(255,255,255,0.72); border-radius: 15px; border: 1px solid #dceafe; backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); max-width: 820px; margin: 0 auto; }
+        .viewer-legend { color: #1f3d72; font-size: 0.82rem; margin-top: 0.35rem; text-align: center; }
+        .section-header { font-weight: 700; color:#09306f; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.5rem; }
+        .section-divider { margin-bottom:1rem; border-bottom:1px solid #e2eaf7; width:100%; }
+        .info-card { background:#f7fbff; border-left:4px solid #4b82ff; border-radius:14px; padding:0.8rem; margin-bottom:0.65rem; }
+        .center-content { display:flex; justify-content:center; }
+        .center-main { max-width: 900px; width:100%; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -585,34 +588,58 @@ def main():
         )
 
     with tab_trans:
-        st.markdown("#### Protein Translation")
-        if st.button("Translate to Protein"):
-            protein = translate_dna_to_protein(seq)
-            st.code(protein, language="text")
-            hydrophobicity = average_hydrophobicity(protein)
-            st.metric("Average Hydrophobicity (Kyte-Doolittle)", f"{hydrophobicity:.2f}")
-            if px is not None:
-                aa_series = pd.Series(list(protein))
-                aa_freq = (
-                    aa_series.value_counts(normalize=True).sort_index() * 100.0
-                ).round(2)
-                freq_df = aa_freq.reset_index()
-                freq_df.columns = ["Amino Acid", "Percent"]
-                freq_fig = px.bar(
-                    freq_df,
-                    x="Percent",
-                    y="Amino Acid",
-                    orientation="h",
-                    title="Amino Acid Frequency (%)",
-                    template="plotly_dark",
-                )
-                st.plotly_chart(freq_fig, width="stretch")
-            st.markdown("<div class='soft-card'><h4 style='margin:0 0 0.45rem 0; color:#0f4f8b;'>3D Structure (Ribbon / Cartoon)</h4><div class='viewer-frame'>", unsafe_allow_html=True)
-            target_pdb = pdb_id or "4HHB"
-            show_3d_protein(target_pdb)
-            st.markdown("</div></div>", unsafe_allow_html=True)
-        else:
-            st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
+        st.markdown("<div class='section-header'>⚙️ Protein Translation and 3D Analysis</div><div class='section-divider'></div>", unsafe_allow_html=True)
+        with st.container():
+            col1, col2, col3 = st.columns([1, 4, 1])
+            with col2:
+                if st.button("Translate to Protein"):
+                    protein = translate_dna_to_protein(seq)
+                    st.code(protein, language="text")
+                    hydrophobicity = average_hydrophobicity(protein)
+                    st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
+                    if px is not None:
+                        aa_series = pd.Series(list(protein))
+                        aa_freq = (
+                            aa_series.value_counts(normalize=True).sort_index() * 100.0
+                        ).round(2)
+                        freq_df = aa_freq.reset_index()
+                        freq_df.columns = ["Amino Acid", "Percent"]
+                        freq_fig = px.bar(
+                            freq_df,
+                            x="Amino Acid",
+                            y="Percent",
+                            text="Percent",
+                            orientation="v",
+                            color="Percent",
+                            color_continuous_scale="Viridis",
+                            title="Amino Acid Frequency (%)",
+                            template="plotly_white",
+                        )
+                        freq_fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+                        freq_fig.update_layout(yaxis_title="Percent", margin=dict(l=10,r=10,t=30,b=10))
+                        st.plotly_chart(freq_fig, use_container_width=True)
+
+                        counts = aa_series.value_counts().reindex(["A", "C", "G", "T"]).fillna(0)
+                        total = counts.sum()
+                        donut_fig = px.pie(
+                            values=counts.values,
+                            names=counts.index,
+                            hole=0.55,
+                            color_discrete_sequence=px.colors.sequential.Blues,
+                            title="Nucleotide Composition",
+                            template="plotly_white",
+                        )
+                        donut_fig.update_traces(textinfo='percent+label')
+                        st.plotly_chart(donut_fig, use_container_width=True)
+                        st.markdown("<div style='font-size:0.9rem;color:#2f4f7f;'>Legend: A/T/C/G counts with percent in chart labels.</div>", unsafe_allow_html=True)
+
+                    st.markdown("<div class='viewer-frame'>", unsafe_allow_html=True)
+                    target_pdb = pdb_id or "4HHB"
+                    show_3d_protein(target_pdb)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    st.caption("Blue = N-terminus, Red = C-terminus. Hover shows residue and position.")
+                else:
+                    st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
 
 
 if __name__ == "__main__":
