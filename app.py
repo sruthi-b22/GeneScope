@@ -267,17 +267,20 @@ def main():
         h1, h2, h3, h4, h5 {
             font-family: 'Montserrat', sans-serif;
         }
+        :root, .block-container, .css-1d391kg, .stApp, .stApp > section {
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            padding: 0 0.85rem !important;
+        }
         .block-container {
-            padding: 0.5rem 0.75rem 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 2rem 0.85rem 1rem !important;
         }
         .soft-card {
             background: #ffffff;
             border-radius: 12px;
             border: 1px solid rgba(15, 23, 42, 0.12);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-            padding: 1.5rem;
+            padding: 1.25rem;
             margin-bottom: 1rem;
             max-width: 1200px;
             margin-left: auto;
@@ -322,31 +325,28 @@ def main():
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div style='background:#0d2a66; border-radius:14px; padding:0.8rem 1rem; margin-bottom:1rem;'>
-          <h1 style='margin:0; color:white; font-size:2rem; font-weight:800;'>🧬 GeneScope Biotech Dashboard</h1>
-          <div style='color:#d6ddff; font-size:0.9rem; margin-top:0.2rem;'>Interactive gene analytics and protein modeling.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     genes = load_genes()
     gene_ids = [g["gene"] for g in genes]
 
     # Top navigation header with gene selection
     with st.container():
-        st.markdown("<div style='max-width:1200px; margin:0 auto; padding:0.75rem 0; display:flex; gap:1rem; align-items:center;'>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([2, 3, 1])
-        with col1:
-            st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.8rem; font-weight:800; color:#0b2f66;'>🧬 GeneScope</div>", unsafe_allow_html=True)
-            st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3c4665; font-size:0.88rem;'>Gene + structural biology analytics</div>", unsafe_allow_html=True)
-        with col2:
-            selected_id = st.selectbox("Select a gene", options=gene_ids, index=0, label_visibility='visible')
-        with col3:
-            st.markdown("<div style='text-align:right; font-family:Open Sans, sans-serif; color:#3f4c70;'>About</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style='max-width:1200px; margin:0 auto; padding:0.35rem 0 1rem; border-bottom:1px solid #e8edf8; display:flex; justify-content:center;'>
+            <div style='width:100%;'>
+            """,
+            unsafe_allow_html=True,
+        )
+        nav1, nav2, nav3 = st.columns([2, 3, 1])
+        with nav1:
+            st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.9rem; font-weight:800; color:#10366f; margin-bottom:0.2rem;'>🧬 GeneScope</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3e4f74; font-size:0.82rem;'>Gene analytics and structure insights</div>", unsafe_allow_html=True)
+        with nav2:
+            selected_id = st.selectbox("Gene Selection", options=gene_ids, index=0, label_visibility='visible', help="Search and select a gene")
+        with nav3:
+            if st.button("About"):
+                st.info("GeneScope: A concise gene analytics dashboard with 3D protein preview.")
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Loading animation when (re)computing for a selected gene
     with st.spinner("Loading gene profile..."):
@@ -399,7 +399,7 @@ def main():
             st.caption(
                 f"Sequence source: RefSeq {selected_gene['refseq_mrna']} ({selected_gene.get('sequence_note','').strip()})"
             )
-        st.code(seq, language="text")
+        st.text_area("Sequence", value=seq, height=170, key="dna_seq", help="Scroll to view long sequences", placeholder="No DNA sequence available", disabled=True)
         st.write(f"Length: **{len(seq)}** bases")
 
         variants = selected_gene.get("variants", []) or []
