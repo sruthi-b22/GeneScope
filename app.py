@@ -391,18 +391,18 @@ def main():
 
         variants = selected_gene.get("variants", []) or []
         if variants:
-            st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.5rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>Pathology & Biotech</div>", unsafe_allow_html=True)
-            path_rows = []
-            for v in variants:
-                path_rows.append({
+            pathology_data = [
+                {
                     "Variant": v.get("variant", "—"),
                     "Condition": v.get("condition", "—"),
                     "Significance": v.get("significance", "—"),
                     "Note": v.get("note", "—"),
-                })
-            st.dataframe(pd.DataFrame(path_rows), use_container_width=True)
+                }
+                for v in variants
+            ]
+            st.markdown("<div class='soft-card'><div style='border-left:4px solid #3b6fd3; padding-left:0.45rem; margin-bottom:0.35rem; color:#0f4f8b; font-weight:700; font-size:1rem;'>🧬 Clinical Variant Analysis</div>", unsafe_allow_html=True)
+            st.dataframe(pd.DataFrame(pathology_data), use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with tab_viz:
         st.markdown("#### High‑Tech GC & Nucleotide Visualization")
