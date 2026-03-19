@@ -376,23 +376,26 @@ def main():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Tabs for different views
-    tab_seq, tab_viz, tab_trans = st.tabs(
-        ["🧬 Sequence Analysis", "📊 Visualization", "🧪 Translation"]
-    )
+    # Main centered body and tabs for different views
+    main_left, main_center, main_right = st.columns([1, 5, 1])
+    with main_center:
+        tab_seq, tab_viz, tab_trans = st.tabs(
+            ["🧬 Sequence Analysis", "📊 Visualization", "🧪 Translation"]
+        )
 
-    with tab_seq:
+        with tab_seq:
         st.markdown("<div class='soft-card'><div style='display:flex; justify-content:space-between; align-items:start; gap:0.6rem;'><div><h4 style='margin:0 0 0.25rem 0; color:#0f4f8b;'>Entry Overview</h4><p style='margin:0; color:#3d4f69;'>Fast facts for this gene and its protein.</p></div></div>", unsafe_allow_html=True)
-        st.markdown("<div class='fast-facts'>", unsafe_allow_html=True)
-        if selected_gene.get("protein_name"):
-            st.markdown(f"<span class='fact-pill'>Protein: {selected_gene['protein_name']}</span>", unsafe_allow_html=True)
-        if selected_gene.get("subcellular_location"):
-            st.markdown(f"<span class='fact-pill'>Location: {selected_gene['subcellular_location']}</span>", unsafe_allow_html=True)
-        if selected_gene.get("category"):
-            st.markdown(f"<span class='fact-pill'>Category: {selected_gene.get('category')}</span>", unsafe_allow_html=True)
-        if selected_gene.get("disease"):
-            st.markdown(f"<span class='fact-pill'>Condition: {selected_gene.get('disease')}</span>", unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        left_col, right_col = st.columns(2)
+        with left_col:
+            if selected_gene.get("protein_name"):
+                st.markdown(f"<span class='fact-pill'>Protein: {selected_gene['protein_name']}</span>", unsafe_allow_html=True)
+            if selected_gene.get("subcellular_location"):
+                st.markdown(f"<span class='fact-pill'>Location: {selected_gene['subcellular_location']}</span>", unsafe_allow_html=True)
+        with right_col:
+            if selected_gene.get("category"):
+                st.markdown(f"<span class='fact-pill'>Category: {selected_gene.get('category')}</span>", unsafe_allow_html=True)
+            if selected_gene.get("disease"):
+                st.markdown(f"<span class='fact-pill'>Condition: {selected_gene.get('disease')}</span>", unsafe_allow_html=True)
 
         st.markdown("<div class='soft-card'><h5 class='card-title'>Function & Sequence</h5>", unsafe_allow_html=True)
         if selected_gene.get("go_function"):
@@ -416,10 +419,11 @@ def main():
                 condition = v.get("condition", "No condition")
                 note = v.get("note", "")
                 significance = v.get("significance", "")
-                st.markdown(
-                    f"<div class='pathvariant'><div style='font-weight:700;color:#0f3b75;'>{variant}</div><div style='margin-top:0.2rem;color:#1f3357;'><strong>Condition:</strong> {condition}</div><div style='margin-top:0.15rem;font-size:0.88rem;color:#2f4368;'><strong>Significance:</strong> {significance}</div><div style='margin-top:0.35rem;font-size:0.9rem;color:#404e66;'>{note}</div></div>",
-                    unsafe_allow_html=True,
-                )
+                with st.container():
+                    st.markdown(
+                        f"<div style='border:1px solid #dbe4f0;border-radius:10px;padding:0.75rem;background:#ffffff;word-wrap:break-word;'><div style='font-weight:700;color:#0f3b75;'>{variant}</div><div style='margin-top:0.2rem;color:#1f3357;'><strong>Condition:</strong> {condition}</div><div style='margin-top:0.15rem;font-size:0.88rem;color:#2f4368;'><strong>Significance:</strong> {significance}</div><div style='margin-top:0.35rem;font-size:0.9rem;color:#404e66;white-space:normal;'>{note}</div></div>",
+                        unsafe_allow_html=True,
+                    )
             st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -531,7 +535,7 @@ def main():
                     yaxis_title="Segment row",
                     margin=dict(t=35, l=30, r=30, b=30),
                 )
-                st.plotly_chart(heatmap_fig, width="100%")
+                st.plotly_chart(heatmap_fig, use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         # BLAST-style conservation summary
@@ -554,7 +558,7 @@ def main():
             )
             cons_fig.update_traces(textposition="outside")
             cons_fig.update_yaxes(range=[0, 100])
-            st.plotly_chart(cons_fig, width="stretch")
+            st.plotly_chart(cons_fig, use_container_width=True)
 
             # Simple positional mismatch map given the identity fractions
             if np is not None and len(seq) > 0:
@@ -597,7 +601,7 @@ def main():
                     title="Aligned position (schematic)",
                     showticklabels=False,
                 )
-                st.plotly_chart(mismatch_fig, width="stretch")
+                st.plotly_chart(mismatch_fig, use_container_width=True)
         else:
             st.caption(
                 "Conservation data not configured for this gene or Plotly is unavailable."
