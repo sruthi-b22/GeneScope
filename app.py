@@ -13,7 +13,7 @@ import streamlit.components.v1 as components
 import py3Dmol
 
 import pandas as pd
-# from genes import GENE_DB
+from genes import GENE_DB
 
 try:
     import numpy as np
@@ -32,37 +32,6 @@ CONSERVATION = {
     "HTT": {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
     "CFTR": {"Pan troglodytes": 0.98, "Mus musculus": 0.78},
     "TP53": {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
-}
-# Temporary sample genes (instead of genes.py)
-GENE_DB = {
-    "TP53": {
-        "category": "Tumor Suppressor",
-        "disease": "Cancers",
-        "description": "Guardian of the genome - helps prevent cancer",
-        "sequence": "ATGGAGGAGCCGCAGTCAGATCCTAGCGTCGAGCCCCCTCTGAGTCAGGAAACATTTTCAGACCTATGGAAACT",
-        "refseq_mrna": "NM_000546",
-        "protein_name": "p53 protein",
-        "go_function": "DNA repair and cell cycle control",
-        "subcellular_location": "Nucleus",
-        "pdb_id": "1TUP",
-        "variants": [
-            {"variant": "R175H", "condition": "Cancer", "significance": "Pathogenic"}
-        ]
-    },
-    "BRCA1": {
-        "category": "DNA Repair",
-        "disease": "Breast/Ovarian Cancer",
-        "description": "Helps repair damaged DNA",
-        "sequence": "ATGGATTTATCTGCTCTTCGCGTTGAAGAAGTACAAAATGTCATTAATGCTATGCAGAAAATCTTAGAG",
-        "refseq_mrna": "NM_007294",
-        "protein_name": "BRCA1 protein",
-        "go_function": "DNA double-strand break repair",
-        "subcellular_location": "Nucleus",
-        "pdb_id": "1JM7",
-        "variants": [
-            {"variant": "185delAG", "condition": "Breast cancer", "significance": "Pathogenic"}
-        ]
-    }
 }
 def load_genes():
     genes = []
@@ -407,8 +376,20 @@ def main():
         with nav1:
             st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.9rem; font-weight:800; color:#10366f; margin-bottom:0.2rem;'>🧬 GeneScope</div>", unsafe_allow_html=True)
             st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3e4f74; font-size:0.82rem;'>Gene analytics and structure insights</div>", unsafe_allow_html=True)
-        with nav2:
-            selected_id = st.selectbox("Gene Selection", options=gene_ids, index=0, label_visibility='visible', help="Search and select a gene")
+                with nav2:
+            search_term = st.text_input("🔍 Search any gene (like NCBI)", "", 
+                                        placeholder="Type BRCA1, TP53, CFTR...", 
+                                        help="Type part of the gene name and it will find it instantly")
+            
+            # Filter genes from your real genes.py
+            filtered_genes = [g for g in gene_ids if search_term.upper() in g.upper()]
+            
+            if filtered_genes:
+                selected_id = st.selectbox("Matching genes", options=filtered_genes, index=0)
+            else:
+                selected_id = gene_ids[0]  # fallback to first gene if nothing typed
+                if search_term:
+                    st.warning("No exact match in our database. Showing first gene.")
         with nav3:
             if st.button("About"):
                 st.info("GeneScope: A concise gene analytics dashboard with 3D protein preview.")
