@@ -328,75 +328,88 @@ def amino_acid_composition(protein_seq):
 def main():
     st.set_page_config(page_title="GeneScope Biotech Dashboard", layout="wide")
 
-    # Global styling / soft UI theme
-    st.markdown(
-        """
+    st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@400;600&display=swap');
-        html, body, [class*="css"] {
-            font-family: 'Open Sans', sans-serif;
-            background: #FDFDFD;
-        }
-        h1, h2, h3, h4, h5 {
-            font-family: 'Montserrat', sans-serif;
-        }
-        :root, .block-container, .css-1d391kg, .stApp, .stApp > section {
-            max-width: 1200px !important;
-            margin: 0 auto !important;
-            padding: 0 0.85rem !important;
-        }
-        .block-container {
-            padding: 2rem 0.85rem 1rem !important;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        html, body, [class*="css"] { font-family: 'Inter', sans-serif; background: #ffffff; }
+        .stApp { background: #ffffff; }
+        .block-container { max-width: 1100px !important; margin: 0 auto !important; padding: 0 1rem 2rem !important; }
+
+        /* Hero nav area */
+        h1,h2,h3,h4,h5 { font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: -0.5px; }
+
+        /* Big clean cards */
         .soft-card {
             background: #ffffff;
-            border-radius: 12px;
-            border: 1px solid rgba(15, 23, 42, 0.12);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-            padding: 1.25rem;
+            border-radius: 16px;
+            border: 1px solid #e8f0fe;
+            padding: 1.5rem;
             margin-bottom: 1rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
         }
-        .card-title { font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 700; color:#0b3f80; }
-        .hero {
-            background: linear-gradient(135deg, #E6F0FF 0%, #F8FBFF 100%);
-            border-radius: 18px;
-            padding: 1rem 1.2rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(71, 118, 209, 0.2);
-            box-shadow: 0 8px 24px rgba(25, 68, 145, 0.08);
+        .card-title { font-size: 1rem; font-weight: 700; color: #0a2540; margin-bottom: 0.6rem; letter-spacing: -0.2px; }
+
+        /* Spec pills — very minimal */
+        .spec-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0.5rem; margin-top:0.6rem; }
+        .spec-pill { background:#f7faff; border:1px solid #e2eaff; border-radius:10px; padding:0.55rem 0.7rem; }
+        .spec-label { font-size:0.68rem; color:#8898b3; margin:0; text-transform:uppercase; letter-spacing:0.5px; font-weight:500; }
+        .spec-value { font-size:0.92rem; font-weight:600; color:#0a2540; margin:0.1rem 0 0; }
+
+        /* Info card */
+        .info-card { background:#f0f7ff; border-left:3px solid #2563eb; border-radius:0; padding:0.8rem 1rem; margin-bottom:0.6rem; font-size:0.88rem; color:#1e3a6e; line-height:1.6; }
+
+        /* Metric cards — big and proud like the reference */
+        div[data-testid="stMetricValue"] { font-size: 2rem !important; font-weight: 800 !important; color: #0a2540 !important; letter-spacing: -1px !important; }
+        div[data-testid="stMetricLabel"] { font-size: 0.72rem !important; color: #8898b3 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; font-weight: 500 !important; }
+        div[data-testid="metric-container"] { background: #f7faff; border-radius: 14px; padding: 1rem; border: 1px solid #e2eaff; }
+
+        /* Tabs — clean underline style */
+        .stTabs [data-baseweb="tab-list"] { border-bottom: 1px solid #e8f0fe !important; gap: 0.5rem; background: transparent !important; }
+        .stTabs [data-baseweb="tab"] { color: #8898b3 !important; font-size: 0.88rem !important; font-weight: 500 !important; padding: 0.7rem 1.2rem !important; border-radius: 0 !important; background: transparent !important; }
+        .stTabs [aria-selected="true"] { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; font-weight: 600 !important; background: transparent !important; }
+
+        /* Buttons — pill shaped like reference */
+        .stButton button {
+            background: #0a2540 !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 100px !important;
+            font-weight: 500 !important;
+            font-size: 0.88rem !important;
+            padding: 0.5rem 1.5rem !important;
+            letter-spacing: 0.1px !important;
         }
-        .hero h1 { margin:0; color:#0b3c7f; font-size:2rem; letter-spacing:0.2px; }
-        .hero p { margin:0.2rem 0 0; color:#2f4f7d; font-size:0.92rem; }
-        .metric-row { display:flex; gap:0.5rem; margin-bottom:0.55rem; }
-        .metric-pill { background:#ffffff; border:1px solid rgba(88, 166, 255, 0.3); border-radius:12px; padding:0.45rem 0.55rem; flex:1; min-width:130px; box-shadow:0 8px 20px rgba(20,43,104,0.05); }
-        .metric-label { font-size:0.68rem; letter-spacing:0.44px; color:#5e6b94; text-transform:uppercase; margin:0; font-weight:600; font-family:'Open Sans', sans-serif; }
-        .metric-value { font-size:48px; font-weight:800; color:#153e82; margin:0; font-family:'Montserrat', sans-serif; line-height:1; }
-        .metric-note { font-size:0.76rem; color:#4861a1; margin-top:0.15rem; }
-        .path-card { background:#161b22; border-left:4px solid #dc2626; border-radius:10px; padding:0.7rem; margin-bottom:0.45rem; color:#f3f4f6; }
-        .path-variant { font-family:'Courier New', monospace; font-size:0.95rem; margin:0; font-weight:700; }
-        .path-condition { font-size:0.88rem; color:#dbeafe; margin:0.22rem 0; }
-        .path-significance { font-size:0.8rem; color:#ff8f8f; margin:0; }
-        .spec-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.45rem; margin-top:0.6rem; }
-        .spec-pill { background:#f4f7ff; border:1px solid #dbe4fd; border-radius:10px; padding:0.45rem 0.55rem; color:#1f3570; }
-        .spec-label { font-size:0.7rem; color:#5f6d90; margin:0; }
-        .spec-value { font-size:0.95rem; font-weight:700; margin:0; }
-        .fact-pill { border-radius: 12px; background:#eef5ff; border:1px solid #d4e3ff; padding:0.42rem 0.9rem; color:#0a2a6b; font-size:0.86rem; font-weight:600; }
-        .viewer-frame { background: rgba(255,255,255,0.72); border-radius: 15px; border: 1px solid #dceafe; backdrop-filter: blur(10px); padding: 0.6rem; box-shadow: 0 12px 30px rgba(0,0,0,0.08); max-width: 820px; margin: 0 auto; }
-        .viewer-legend { color: #1f3d72; font-size: 0.82rem; margin-top: 0.35rem; text-align: center; }
-        .section-header { font-weight: 700; color:#09306f; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.5rem; }
-        .section-divider { margin-bottom:1rem; border-bottom:1px solid #e2eaf7; width:100%; }
-        .info-card { background:#f7fbff; border-left:4px solid #4b82ff; border-radius:14px; padding:0.8rem; margin-bottom:0.65rem; }
-        .center-content { display:flex; justify-content:center; }
-        .center-main { max-width: 900px; width:100%; }
-        .pathvariant { background:#ffffff; border:1px solid #dae4f4; border-radius:10px; padding:0.65rem; margin-bottom:0.5rem; width:100%; }
-        .timeline-header { font-weight: 700; margin-bottom:0.4rem; }
+        .stButton button:hover { background: #2563eb !important; }
+
+        /* Input labels */
+        .stSelectbox label, .stNumberInput label, .stTextInput label {
+            color: #8898b3 !important;
+            font-size: 0.72rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        /* Input boxes */
+        .stTextInput input { border-radius: 100px !important; border-color: #e2eaff !important; padding: 0 1rem !important; background: #f7faff !important; }
+        .stSelectbox div[data-baseweb="select"] > div { border-radius: 10px !important; border-color: #e2eaff !important; background: #f7faff !important; }
+
+        /* Code blocks */
+        code { font-size: 0.82rem !important; background: #f7faff !important; border: 1px solid #e2eaff !important; border-radius: 8px !important; color: #0a2540 !important; }
+
+        /* Alerts */
+        .stSuccess > div { background: #f0fdf4 !important; border-radius: 10px !important; border: 1px solid #bbf7d0 !important; color: #14532d !important; }
+        .stWarning > div { background: #fffbeb !important; border-radius: 10px !important; border: 1px solid #fde68a !important; color: #78350f !important; }
+        .stError > div { background: #fef2f2 !important; border-radius: 10px !important; border: 1px solid #fecaca !important; color: #7f1d1d !important; }
+        .stInfo > div { background: #f0f7ff !important; border-radius: 10px !important; border: 1px solid #bfdbfe !important; color: #1e3a6e !important; }
+
+        /* Expander */
+        .streamlit-expanderHeader { color: #0a2540 !important; font-weight: 600 !important; font-size: 0.88rem !important; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #e2eaff; border-radius: 10px; }
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     genes = load_genes()
     gene_ids = [g["gene"] for g in genes]
@@ -412,8 +425,12 @@ def main():
         )
         nav1, nav2, nav3 = st.columns([2, 3, 1])
         with nav1:
-            st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.9rem; font-weight:800; color:#10366f; margin-bottom:0.2rem;'>🧬 GeneScope</div>", unsafe_allow_html=True)
-            st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3e4f74; font-size:0.82rem;'>Gene analytics and structure insights</div>", unsafe_allow_html=True)
+            st.markdown("""
+                <div style='padding-top:0.3rem;'>
+                <div style='font-family:Inter,sans-serif;font-size:1.5rem;font-weight:800;color:#0a2540;letter-spacing:-0.5px;'>🧬 GeneScope</div>
+                <div style='font-size:0.78rem;color:#8898b3;font-weight:500;margin-top:2px;letter-spacing:0.2px;'>Gene analytics & structure insights</div>
+                </div>
+            """, unsafe_allow_html=True)
         with nav2:
             search_term = st.text_input("🔍 Search any gene", "",
                                         placeholder="Type BRCA1, TP53, cystic fibrosis...",
