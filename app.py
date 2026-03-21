@@ -252,6 +252,25 @@ def show_3d_protein(pdb_id: str):
     components.html(html_blob, height=550, width=850)
 
 
+def interpret_gc(gc):
+    if gc > 60:
+        return "High GC content — suggests increased DNA stability and possible CpG-rich regulatory regions."
+    elif gc >= 40:
+        return "Moderate GC content — typical of protein-coding regions in many organisms."
+    else:
+        return "Low GC content — may indicate non-coding or less stable genomic regions."
+
+
+def interpret_protein(protein):
+    length = len(protein)
+    if length > 300:
+        return "Long protein — likely contains multiple functional domains."
+    elif length > 100:
+        return "Moderate-length protein — typical enzyme or structural protein."
+    else:
+        return "Short protein — may act as a signaling peptide or fragment."
+
+
 def main():
     st.set_page_config(page_title="GeneScope Biotech Dashboard", layout="wide")
 
@@ -367,6 +386,8 @@ def main():
         mark_col3.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>% GC</div><div style='font-weight:700; color:#143f7f;'>{gc:.2f}%</div></div>", unsafe_allow_html=True)
         mark_col4.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Length</div><div style='font-weight:700; color:#143f7f;'>{len(seq)} bp</div></div>", unsafe_allow_html=True)
 
+        st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_gc(gc)}</div>", unsafe_allow_html=True)
+
         st.markdown("<div style='margin-top:0.45rem; border-left:4px solid #3b6fd3; padding-left:0.45rem; color:#0f4f8b; font-weight:700; font-size:1.1rem;'>Thermodynamic Metrics</div>", unsafe_allow_html=True)
         th1, th2, th3 = st.columns(3)
         th1.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Molecular Weight</div><div style='font-weight:700; color:#143f7f;'>{mw:,.0f} Da</div></div>", unsafe_allow_html=True)
@@ -394,6 +415,8 @@ def main():
                 st.markdown(selected_gene["go_function"])
             else:
                 st.markdown(selected_gene.get("description", ""))
+
+            st.markdown(f"<div class='info-card'><strong>Category:</strong> {selected_gene.get('category','N/A')}<br><strong>Disease:</strong> {selected_gene.get('disease','N/A')}<br><strong>Biological Role:</strong> {selected_gene.get('go_function','N/A')}</div>", unsafe_allow_html=True)
 
             st.markdown("<div style='margin-top:0.5rem;'><strong>DNA Sequence</strong></div>", unsafe_allow_html=True)
             if selected_gene.get("refseq_mrna"):
@@ -624,6 +647,7 @@ def main():
                 if st.button("Translate to Protein"):
                     protein = translate_dna_to_protein(seq)
                     st.code(protein, language="text")
+                    st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_protein(protein)}</div>", unsafe_allow_html=True)
                     hydrophobicity = average_hydrophobicity(protein)
                     st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
                     if px is not None:
@@ -648,25 +672,48 @@ def main():
                         freq_fig.update_layout(yaxis_title="Percent", margin=dict(l=10,r=10,t=30,b=10), font=dict(family='Open Sans, sans-serif', color='#0f3a74'))
                         st.plotly_chart(freq_fig, use_container_width=True)
 
-                        counts = aa_series.value_counts().reindex(["A", "C", "G", "T"]).fillna(0)
+                        counts = aa_series.value_counts()
                         total = counts.sum()
                         donut_fig = px.pie(
                             values=counts.values,
                             names=counts.index,
                             hole=0.55,
                             color_discrete_sequence=px.colors.sequential.Blues,
-                            title="Nucleotide Composition",
+                            title="Amino Acid Composition",
                             template="plotly_white",
                         )
                         donut_fig.update_traces(textinfo='percent+label')
                         st.plotly_chart(donut_fig, use_container_width=True)
-                        st.markdown("<div style='font-size:0.9rem;color:#2f4f7f;'>Legend: A/T/C/G counts with percent in chart labels.</div>", unsafe_allow_html=True)
+                        st.markdown("<div style='font-size:0.9rem;color:#2f4f7f;'>Legend: Amino acid counts with percent in chart labels.</div>", unsafe_allow_html=True)
 
                     st.markdown("<div class='viewer-frame'>", unsafe_allow_html=True)
                     target_pdb = pdb_id or "4HHB"
                     show_3d_protein(target_pdb)
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.caption("Blue = N-terminus, Red = C-terminus. Hover shows residue and position.")
+
+                    st.markdown("---")
+                    st.markdown("🔬 **Mutation Simulator**")
+                    mut_pos = st.number_input("Position to mutate (1-based)", min_value=1, max_value=len(seq), value=1, step=1)
+                    mut_base = st.selectbox("New base", ["A", "T", "G", "C"])
+                    if st.button("Apply Mutation"):
+                        if 1 <= mut_pos <= len(seq):
+                            original_base = seq[mut_pos-1]
+                            mutated_seq = seq[:mut_pos-1] + mut_base + seq[mut_pos:]
+                            mutated_protein = translate_dna_to_protein(mutated_seq)
+                            st.write(f"**Original base at position {mut_pos}:** {original_base}")
+                            st.write(f"**Mutated base:** {mut_base}")
+                            st.code(f"Original protein: {protein}", language="text")
+                            st.code(f"Mutated protein:  {mutated_protein}", language="text")
+                            if protein == mutated_protein:
+                                mutation_type = "Silent mutation"
+                            elif "*" in mutated_protein and "*" not in protein:
+                                mutation_type = "Nonsense mutation"
+                            else:
+                                mutation_type = "Missense mutation"
+                            st.success(f"Mutation type: {mutation_type}")
+                        else:
+                            st.error("Invalid position.")
                 else:
                     st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
 
