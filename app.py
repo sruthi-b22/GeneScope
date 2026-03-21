@@ -13,7 +13,7 @@ import streamlit.components.v1 as components
 import py3Dmol
 
 import pandas as pd
-from genes import GENE_DB
+# from genes import GENE_DB
 
 try:
     import numpy as np
@@ -33,8 +33,42 @@ CONSERVATION = {
     "CFTR": {"Pan troglodytes": 0.98, "Mus musculus": 0.78},
     "TP53": {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
 }
+# Temporary sample genes (instead of genes.py)
+GENE_DB = {
+    "TP53": {
+        "category": "Tumor Suppressor",
+        "disease": "Cancers",
+        "description": "Guardian of the genome - helps prevent cancer",
+        "sequence": "ATGGAGGAGCCGCAGTCAGATCCTAGCGTCGAGCCCCCTCTGAGTCAGGAAACATTTTCAGACCTATGGAAACT",
+        "refseq_mrna": "NM_000546",
+        "protein_name": "p53 protein",
+        "go_function": "DNA repair and cell cycle control",
+        "subcellular_location": "Nucleus",
+        "pdb_id": "1TUP",
+        "variants": [
+            {"variant": "R175H", "condition": "Cancer", "significance": "Pathogenic"}
+        ]
+    },
+    "BRCA1": {
+        "category": "DNA Repair",
+        "disease": "Breast/Ovarian Cancer",
+        "description": "Helps repair damaged DNA",
+        "sequence": "ATGGATTTATCTGCTCTTCGCGTTGAAGAAGTACAAAATGTCATTAATGCTATGCAGAAAATCTTAGAG",
+        "refseq_mrna": "NM_007294",
+        "protein_name": "BRCA1 protein",
+        "go_function": "DNA double-strand break repair",
+        "subcellular_location": "Nucleus",
+        "pdb_id": "1JM7",
+        "variants": [
+            {"variant": "185delAG", "condition": "Breast cancer", "significance": "Pathogenic"}
+        ]
+    }
+}
 def load_genes():
     genes = []
+    if not GENE_DB:
+        st.error("No genes found! Using demo mode.")
+        return [{"gene": "DEMO", "sequence": "ATGC", "pdb_id": ""}]
     for symbol, meta in GENE_DB.items():
         genes.append(
             {
