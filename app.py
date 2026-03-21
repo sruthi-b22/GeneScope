@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from collections import Counter
 
 # Force install the missing "adapter" if it's not found
 try:
@@ -252,23 +253,35 @@ def show_3d_protein(pdb_id: str):
     components.html(html_blob, height=550, width=850)
 
 
-def interpret_gc(gc):
-    if gc > 60:
-        return "High GC content — suggests increased DNA stability and possible CpG-rich regulatory regions."
-    elif gc >= 40:
-        return "Moderate GC content — typical of protein-coding regions in many organisms."
+def interpret_gc(gc_percent):
+    if gc_percent < 40:
+        return "Low GC content → DNA may be less stable and easier to denature."
+    elif 40 <= gc_percent <= 60:
+        return "Moderate GC content → typical for many organisms."
     else:
-        return "Low GC content — may indicate non-coding or less stable genomic regions."
+        return "High GC content → DNA is more stable due to stronger bonding."
 
 
-def interpret_protein(protein):
-    length = len(protein)
-    if length > 300:
-        return "Long protein — likely contains multiple functional domains."
-    elif length > 100:
-        return "Moderate-length protein — typical enzyme or structural protein."
+def interpret_protein(protein_seq):
+    if "*" in protein_seq:
+        return "Stop codon detected → translation terminated."
+    elif len(protein_seq) < 20:
+        return "Short peptide → may not form a functional protein."
     else:
-        return "Short protein — may act as a signaling peptide or fragment."
+        return "Protein sequence generated → potential functional molecule."
+
+
+def interpret_similarity(score):
+    if score > 90:
+        return "Very high similarity → likely the same or closely related gene."
+    elif score > 70:
+        return "Moderate similarity → may share functional regions."
+    else:
+        return "Low similarity → likely unrelated sequences."
+
+
+def amino_acid_composition(protein_seq):
+    return dict(Counter(protein_seq))
 
 
 def main():
@@ -383,10 +396,10 @@ def main():
         mark_col1, mark_col2, mark_col3, mark_col4 = st.columns(4)
         mark_col1.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Gene</div><div style='font-weight:700; color:#143f7f;'>{selected_gene.get('gene','—')}</div></div>", unsafe_allow_html=True)
         mark_col2.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Category</div><div style='font-weight:700; color:#143f7f;'>{selected_gene.get('category','—')}</div></div>", unsafe_allow_html=True)
-        mark_col3.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>% GC</div><div style='font-weight:700; color:#143f7f;'>{gc:.2f}%</div></div>", unsafe_allow_html=True)
+        with mark_col3:
+            st.metric("GC Content (%)", f"{gc:.2f}")
+            st.caption(interpret_gc(gc))
         mark_col4.markdown(f"<div style='background:#ffffff; border:1px solid #dbe6ff; border-radius:10px; padding:0.4rem 0.55rem;'><div style='font-size:0.7rem; color:#66729a; margin-bottom:0.25rem;'>Length</div><div style='font-weight:700; color:#143f7f;'>{len(seq)} bp</div></div>", unsafe_allow_html=True)
-
-        st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_gc(gc)}</div>", unsafe_allow_html=True)
 
         st.markdown("<div style='margin-top:0.45rem; border-left:4px solid #3b6fd3; padding-left:0.45rem; color:#0f4f8b; font-weight:700; font-size:1.1rem;'>Thermodynamic Metrics</div>", unsafe_allow_html=True)
         th1, th2, th3 = st.columns(3)
@@ -648,6 +661,11 @@ def main():
                     protein = translate_dna_to_protein(seq)
                     st.code(protein, language="text")
                     st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_protein(protein)}</div>", unsafe_allow_html=True)
+                    
+                    aa_counts = amino_acid_composition(protein)
+                    st.subheader("Amino Acid Composition")
+                    st.bar_chart(aa_counts)
+                    
                     hydrophobicity = average_hydrophobicity(protein)
                     st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
                     if px is not None:
@@ -693,16 +711,17 @@ def main():
                     st.caption("Blue = N-terminus, Red = C-terminus. Hover shows residue and position.")
 
                     st.markdown("---")
-                    st.markdown("🔬 **Mutation Simulator**")
-                    mut_pos = st.number_input("Position to mutate (1-based)", min_value=1, max_value=len(seq), value=1, step=1)
-                    mut_base = st.selectbox("New base", ["A", "T", "G", "C"])
+                    st.subheader("Mutation Simulator")
+
+                    position = st.number_input("Position (1-based index)", min_value=1, max_value=len(seq))
+                    new_base = st.selectbox("New Nucleotide", ["A", "T", "G", "C"])
                     if st.button("Apply Mutation"):
-                        if 1 <= mut_pos <= len(seq):
-                            original_base = seq[mut_pos-1]
-                            mutated_seq = seq[:mut_pos-1] + mut_base + seq[mut_pos:]
+                        if 1 <= position <= len(seq):
+                            original_base = seq[position-1]
+                            mutated_seq = seq[:position-1] + new_base + seq[position:]
                             mutated_protein = translate_dna_to_protein(mutated_seq)
-                            st.write(f"**Original base at position {mut_pos}:** {original_base}")
-                            st.write(f"**Mutated base:** {mut_base}")
+                            st.write(f"**Original base at position {position}:** {original_base}")
+                            st.write(f"**Mutated base:** {new_base}")
                             st.code(f"Original protein: {protein}", language="text")
                             st.code(f"Mutated protein:  {mutated_protein}", language="text")
                             if protein == mutated_protein:
