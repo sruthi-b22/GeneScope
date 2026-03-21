@@ -34,15 +34,27 @@ CONSERVATION = {
     "TP53": {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
 }
 from Bio import Entrez, SeqIO
-Entrez.email = "your_email@example.com"  # ← put your real email
+Entrez.email = "sruthibalasubramani6@gmail.com"  # ← put your real email
 
 def fetch_from_ncbi(query):
     try:
-        handle = Entrez.esearch(db="gene", term=query + "[Gene Name] AND Homo sapiens[Organism]", retmax=1)
+        from Bio import Entrez
+        Entrez.email = "sruthibalasubramani6@gmail.com"  # ← your real email here
+        
+        # Try gene name search first
+        handle = Entrez.esearch(db="gene", term=f"{query}[Gene Name] AND Homo sapiens[Organism]", retmax=1)
         record = Entrez.read(handle)
         handle.close()
+        
+        # If no results, try a broader search
         if not record["IdList"]:
-            return None
+            handle = Entrez.esearch(db="gene", term=f"{query} AND Homo sapiens[Organism]", retmax=1)
+            record = Entrez.read(handle)
+            handle.close()
+        
+        if not record["IdList"]:
+            return None, "Gene not found on NCBI"
+            
         gene_id = record["IdList"][0]
         handle = Entrez.esummary(db="gene", id=gene_id)
         summary = Entrez.read(handle)
@@ -53,9 +65,12 @@ def fetch_from_ncbi(query):
             "full_name": str(info["Description"]),
             "aliases": str(info.get("OtherAliases", "—")),
             "ncbi_id": gene_id,
-        }
-    except:
-        return None
+        }, None
+        
+    except ImportError:
+        return None, "biopython not installed — add it to requirements.txt"
+    except Exception as e:
+        return None, f"NCBI error: {str(e)}"
 def load_genes():
     genes = []
     if not GENE_DB:
@@ -412,13 +427,13 @@ def main():
                 selected_id = gene_ids[0]
                 if search_term:
                     with st.spinner("Not in local DB — searching NCBI live..."):
-                        ncbi = fetch_from_ncbi(search_term)
+                        ncbi, error = fetch_from_ncbi(search_term)
                     if ncbi:
                         st.success(f"🌐 Found on NCBI: **{ncbi['name']}** — {ncbi['full_name']}")
                         st.caption(f"Aliases: {ncbi['aliases']}")
                         st.markdown(f"[View on NCBI ↗](https://www.ncbi.nlm.nih.gov/gene/{ncbi['ncbi_id']})")
                     else:
-                        st.warning("Not found locally or on NCBI.")
+                        st.warning(f"⚠️ {error}")  # ← now shows the REAL reason!
         with nav3:
             if st.button("About"):
                 st.info("GeneScope: A concise gene analytics dashboard with 3D protein preview.")
