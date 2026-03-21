@@ -33,6 +33,29 @@ CONSERVATION = {
     "CFTR": {"Pan troglodytes": 0.98, "Mus musculus": 0.78},
     "TP53": {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
 }
+from Bio import Entrez, SeqIO
+Entrez.email = "your_email@example.com"  # ← put your real email
+
+def fetch_from_ncbi(query):
+    try:
+        handle = Entrez.esearch(db="gene", term=query + "[Gene Name] AND Homo sapiens[Organism]", retmax=1)
+        record = Entrez.read(handle)
+        handle.close()
+        if not record["IdList"]:
+            return None
+        gene_id = record["IdList"][0]
+        handle = Entrez.esummary(db="gene", id=gene_id)
+        summary = Entrez.read(handle)
+        handle.close()
+        info = summary["DocumentSummarySet"]["DocumentSummary"][0]
+        return {
+            "name": str(info["Name"]),
+            "full_name": str(info["Description"]),
+            "aliases": str(info.get("OtherAliases", "—")),
+            "ncbi_id": gene_id,
+        }
+    except:
+        return None
 def load_genes():
     genes = []
     if not GENE_DB:
@@ -376,20 +399,26 @@ def main():
         with nav1:
             st.markdown("<div style='font-family:Montserrat, sans-serif; font-size:1.9rem; font-weight:800; color:#10366f; margin-bottom:0.2rem;'>🧬 GeneScope</div>", unsafe_allow_html=True)
             st.markdown("<div style='font-family:Open Sans, sans-serif; color:#3e4f74; font-size:0.82rem;'>Gene analytics and structure insights</div>", unsafe_allow_html=True)
-                with nav2:
-            search_term = st.text_input("🔍 Search any gene (like NCBI)", "", 
-                                        placeholder="Type BRCA1, TP53, CFTR...", 
-                                        help="Type part of the gene name and it will find it instantly")
-            
-            # Filter genes from your real genes.py
+        with nav2:
+            search_term = st.text_input("🔍 Search any gene", "",
+                                        placeholder="Type BRCA1, TP53, cystic fibrosis...",
+                                        help="Searches your database first, then NCBI live!")
+
             filtered_genes = [g for g in gene_ids if search_term.upper() in g.upper()]
-            
+
             if filtered_genes:
                 selected_id = st.selectbox("Matching genes", options=filtered_genes, index=0)
             else:
-                selected_id = gene_ids[0]  # fallback to first gene if nothing typed
+                selected_id = gene_ids[0]
                 if search_term:
-                    st.warning("No exact match in our database. Showing first gene.")
+                    with st.spinner("Not in local DB — searching NCBI live..."):
+                        ncbi = fetch_from_ncbi(search_term)
+                    if ncbi:
+                        st.success(f"🌐 Found on NCBI: **{ncbi['name']}** — {ncbi['full_name']}")
+                        st.caption(f"Aliases: {ncbi['aliases']}")
+                        st.markdown(f"[View on NCBI ↗](https://www.ncbi.nlm.nih.gov/gene/{ncbi['ncbi_id']})")
+                    else:
+                        st.warning("Not found locally or on NCBI.")
         with nav3:
             if st.button("About"):
                 st.info("GeneScope: A concise gene analytics dashboard with 3D protein preview.")
