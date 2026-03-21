@@ -657,86 +657,49 @@ def main():
         with st.container():
             col1, col2, col3 = st.columns([1, 4, 1])
             with col2:
-                if st.button("Translate to Protein"):
-                    protein = translate_dna_to_protein(seq)
-                    st.code(protein, language="text")
-                    st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_protein(protein)}</div>", unsafe_allow_html=True)
-                    
-                    aa_counts = amino_acid_composition(protein)
+                # --- Session state setup ---
+                for key in ["protein", "mutation_result"]:
+                    if key not in st.session_state:
+                        st.session_state[key] = None
+
+                # --- Translation ---
+                if st.button("Translate to Protein", key="translate_btn"):
+                    st.session_state.protein = translate_dna_to_protein(seq)
+
+                if st.session_state.protein:
+                    st.code(st.session_state.protein, language="text")
+                    st.markdown(f"<div style='font-size:0.85rem; color:#3e4f74; margin-top:0.5rem; padding:0.4rem; background:#f0f4ff; border-radius:8px;'>{interpret_protein(st.session_state.protein)}</div>", unsafe_allow_html=True)
+
+                    aa_counts = amino_acid_composition(st.session_state.protein)
                     st.subheader("Amino Acid Composition")
                     st.bar_chart(aa_counts)
-                    
-                    hydrophobicity = average_hydrophobicity(protein)
+        
+                    hydrophobicity = average_hydrophobicity(st.session_state.protein)
                     st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
-                    if px is not None:
-                        aa_series = pd.Series(list(protein))
-                        aa_freq = (
-                            aa_series.value_counts(normalize=True).sort_index() * 100.0
-                        ).round(2)
-                        freq_df = aa_freq.reset_index()
-                        freq_df.columns = ["Amino Acid", "Percent"]
-                        freq_fig = px.bar(
-                            freq_df,
-                            x="Amino Acid",
-                            y="Percent",
-                            text="Percent",
-                            orientation="v",
-                            color="Percent",
-                            color_continuous_scale="Viridis",
-                            title="Amino Acid Frequency (%)",
-                            template="plotly_white",
-                        )
-                        freq_fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-                        freq_fig.update_layout(yaxis_title="Percent", margin=dict(l=10,r=10,t=30,b=10), font=dict(family='Open Sans, sans-serif', color='#0f3a74'))
-                        st.plotly_chart(freq_fig, use_container_width=True)
 
-                        counts = aa_series.value_counts()
-                        total = counts.sum()
-                        donut_fig = px.pie(
-                            values=counts.values,
-                            names=counts.index,
-                            hole=0.55,
-                            color_discrete_sequence=px.colors.sequential.Blues,
-                            title="Amino Acid Composition",
-                            template="plotly_white",
-                        )
-                        donut_fig.update_traces(textinfo='percent+label')
-                        st.plotly_chart(donut_fig, use_container_width=True)
-                        st.markdown("<div style='font-size:0.9rem;color:#2f4f7f;'>Legend: Amino acid counts with percent in chart labels.</div>", unsafe_allow_html=True)
+                # --- Mutation Simulator ---
+                st.subheader("Mutation Simulator")
+                position = st.number_input("Position (1-based index)", min_value=1, max_value=len(seq), key="mut_pos")
+                new_base = st.selectbox("New Nucleotide", ["A", "T", "G", "C"], key="mut_base")
 
-                    st.markdown("<div class='viewer-frame'>", unsafe_allow_html=True)
-                    target_pdb = pdb_id or "4HHB"
-                    show_3d_protein(target_pdb)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    st.caption("Blue = N-terminus, Red = C-terminus. Hover shows residue and position.")
+                if st.button("Apply Mutation", key="apply_mut_btn"):
+                    if 1 <= position <= len(seq):
+                        original_base = seq[position-1]
+                        mutated_seq = seq[:position-1] + new_base + seq[position:]
+                        mutated_protein = translate_dna_to_protein(mutated_seq)
 
-                    st.markdown("---")
-                    st.subheader("Mutation Simulator")
+                        st.session_state.mutation_result = {
+                            "original_base": original_base,
+                            "new_base": new_base,
+                            "mutated_protein": mutated_protein
+                       }
 
-                    position = st.number_input("Position (1-based index)", min_value=1, max_value=len(seq))
-                    new_base = st.selectbox("New Nucleotide", ["A", "T", "G", "C"])
-                    if st.button("Apply Mutation"):
-                        if 1 <= position <= len(seq):
-                            original_base = seq[position-1]
-                            mutated_seq = seq[:position-1] + new_base + seq[position:]
-                            mutated_protein = translate_dna_to_protein(mutated_seq)
-                            st.write(f"**Original base at position {position}:** {original_base}")
-                            st.write(f"**Mutated base:** {new_base}")
-                            st.code(f"Original protein: {protein}", language="text")
-                            st.code(f"Mutated protein:  {mutated_protein}", language="text")
-                            if protein == mutated_protein:
-                                mutation_type = "Silent mutation"
-                            elif "*" in mutated_protein and "*" not in protein:
-                                mutation_type = "Nonsense mutation"
-                            else:
-                                mutation_type = "Missense mutation"
-                            st.success(f"Mutation type: {mutation_type}")
-                        else:
-                            st.error("Invalid position.")
-                else:
-                    st.info("Click 'Translate to Protein' to generate the amino acid sequence and its hydrophobicity.")
-
-
+                 # --- Display mutation result ---
+                if st.session_state.mutation_result:
+                    res = st.session_state.mutation_result
+                    st.write(f"Original base at position {position}: {res['original_base']}")
+                    st.write(f"Mutated base: {res['new_base']}")
+                    st.code(f"Mutated protein: {res['mutated_protein']}", language="text")
+                    
 if __name__ == "__main__":
     main()
-
