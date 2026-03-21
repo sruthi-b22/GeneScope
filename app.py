@@ -736,6 +736,17 @@ def main():
                     hydrophobicity = average_hydrophobicity(st.session_state.protein)
                     st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
 
+                # --- 3D Protein Structure ---
+                st.markdown("---")
+                st.markdown("<div style='background:#eef4ff;border-left:4px solid #4b82ff;border-radius:10px;padding:0.6rem 0.9rem;margin-bottom:0.6rem;'><strong style='color:#103e7d;'>3D Protein Structure Viewer</strong></div>", unsafe_allow_html=True)
+                
+                if pdb_id:
+                    if st.button("🔬 Load 3D Structure", key="load_3d_btn"):
+                        show_3d_protein(pdb_id)
+                    st.caption(f"PDB ID: {pdb_id} — Click button to load interactive 3D viewer")
+                else:
+                    st.info("No PDB structure available for this gene.")
+                
                 # --- Mutation Simulator ---
                 st.subheader("🧬 Mutation Simulator")
 
