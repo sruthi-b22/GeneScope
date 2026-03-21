@@ -737,28 +737,107 @@ def main():
                     st.markdown("<div class='info-card'><strong>Hydrophobicity</strong><br/>Kyte-Doolittle: <span style='font-weight:700;'>" + f"{hydrophobicity:.2f}" + "</span></div>", unsafe_allow_html=True)
 
                 # --- Mutation Simulator ---
-                st.subheader("Mutation Simulator")
+                st.subheader("🧬 Mutation Simulator")
+
+                mut_type = st.selectbox("Mutation Type", [
+                    "Substitution (change a base)",
+                    "Deletion (remove a base)",
+                    "Insertion (add a base)"
+                ], key="mut_type")
+
                 position = st.number_input("Position (1-based index)", min_value=1, max_value=len(seq), key="mut_pos")
-                new_base = st.selectbox("New Nucleotide", ["A", "T", "G", "C"], key="mut_base")
 
-                if st.button("Apply Mutation", key="apply_mut_btn"):
-                    if 1 <= position <= len(seq):
-                        original_base = seq[position-1]
-                        mutated_seq = seq[:position-1] + new_base + seq[position:]
-                        mutated_protein = translate_dna_to_protein(mutated_seq)
+                if mut_type == "Substitution (change a base)":
+                    new_base = st.selectbox("Replace with", ["A", "T", "G", "C"], key="mut_base")
+                elif mut_type == "Insertion (add a base)":
+                    new_base = st.selectbox("Insert base before position", ["A", "T", "G", "C"], key="mut_base")
+                else:
+                    new_base = None  # deletion needs no new base
 
-                        st.session_state.mutation_result = {
-                            "original_base": original_base,
-                            "new_base": new_base,
-                            "mutated_protein": mutated_protein
-                       }
+                if st.button("⚡ Apply Mutation", key="apply_mut_btn"):
+                    original_base = seq[position - 1]
 
-                 # --- Display mutation result ---
+                    if mut_type == "Substitution (change a base)":
+                        mutated_seq = seq[:position - 1] + new_base + seq[position:]
+                        mut_label = f"Substitution: position {position} {original_base} → {new_base}"
+
+                    elif mut_type == "Deletion (remove a base)":
+                        mutated_seq = seq[:position - 1] + seq[position:]
+                        mut_label = f"Deletion: removed {original_base} at position {position}"
+
+                    else:  # Insertion
+                        mutated_seq = seq[:position - 1] + new_base + seq[position - 1:]
+                        mut_label = f"Insertion: added {new_base} before position {position}"
+
+                    original_protein = translate_dna_to_protein(seq)
+                    mutated_protein = translate_dna_to_protein(mutated_seq)
+
+                    st.session_state.mutation_result = {
+                        "mut_label": mut_label,
+                        "original_base": original_base,
+                        "new_base": new_base,
+                        "original_seq": seq,
+                        "mutated_seq": mutated_seq,
+                        "original_protein": original_protein,
+                        "mutated_protein": mutated_protein,
+                    }
+
+                # --- Display mutation result ---
                 if st.session_state.mutation_result:
                     res = st.session_state.mutation_result
-                    st.write(f"Original base at position {position}: {res['original_base']}")
-                    st.write(f"Mutated base: {res['new_base']}")
-                    st.code(f"Mutated protein: {res['mutated_protein']}", language="text")
+
+                    st.markdown("---")
+                    st.markdown(f"### 📋 Mutation Report")
+                    st.markdown(f"**Type:** {res['mut_label']}")
+
+                    # Before vs After DNA
+                    st.markdown("#### 🧪 DNA: Before vs After")
+                    dna_col1, dna_col2 = st.columns(2)
+                    with dna_col1:
+                        st.markdown("**Original DNA**")
+                        st.code(res["original_seq"][:120] + "...", language="text")
+                        st.caption(f"Length: {len(res['original_seq'])} bp")
+                    with dna_col2:
+                        st.markdown("**Mutated DNA**")
+                        st.code(res["mutated_seq"][:120] + "...", language="text")
+                        st.caption(f"Length: {len(res['mutated_seq'])} bp")
+
+                    # Before vs After Protein
+                    st.markdown("#### 🔬 Protein: Before vs After")
+                    pro_col1, pro_col2 = st.columns(2)
+                    with pro_col1:
+                        st.markdown("**Original Protein**")
+                        st.code(res["original_protein"][:120] + "...", language="text")
+                        st.caption(f"Length: {len(res['original_protein'])} aa")
+                        st.markdown(f"<div style='background:#e8f5e9;border-left:4px solid #2e7d32;border-radius:8px;padding:0.5rem;font-size:0.85rem;color:#1b5e20;'>{interpret_protein(res['original_protein'])}</div>", unsafe_allow_html=True)
+                    with pro_col2:
+                        st.markdown("**Mutated Protein**")
+                        st.code(res["mutated_protein"][:120] + "...", language="text")
+                        st.caption(f"Length: {len(res['mutated_protein'])} aa")
+                        st.markdown(f"<div style='background:#ffebee;border-left:4px solid #c62828;border-radius:8px;padding:0.5rem;font-size:0.85rem;color:#b71c1c;'>{interpret_protein(res['mutated_protein'])}</div>", unsafe_allow_html=True)
+
+                    # Summary overview
+                    st.markdown("#### 📊 Mutation Impact Overview")
+                    orig_len = len(res["original_protein"])
+                    mut_len = len(res["mutated_protein"])
+                    len_diff = mut_len - orig_len
+
+                    orig_gc = gc_content_percent(res["original_seq"])
+                    mut_gc = gc_content_percent(res["mutated_seq"])
+
+                    ov1, ov2, ov3 = st.columns(3)
+                    ov1.metric("Protein Length Change", f"{mut_len} aa", delta=f"{len_diff:+d} aa")
+                    ov2.metric("GC Content (original)", f"{orig_gc:.1f}%")
+                    ov3.metric("GC Content (mutated)", f"{mut_gc:.1f}%", delta=f"{mut_gc - orig_gc:+.1f}%")
+
+                    if res["original_protein"] == res["mutated_protein"]:
+                        st.success("✅ Silent mutation — protein is unchanged! (synonymous)")
+                    elif len_diff < 0:
+                        st.error("🔴 Frameshift likely — protein is shorter. Could cause loss of function.")
+                    elif len_diff > 0:
+                        st.warning("🟡 Protein is longer than expected — possible read-through mutation.")
+                    else:
+                        st.warning("🟠 Missense mutation — protein sequence changed but same length.")
                     
 if __name__ == "__main__":
     main()
