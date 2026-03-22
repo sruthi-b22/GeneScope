@@ -60,6 +60,15 @@ DISEASE_GENE_MAP = {
     "rett syndrome": "MECP2", "neurofibromatosis": "NF1",
     "tuberous sclerosis": "TSC1", "spinal muscular atrophy": "SMN1", "sma": "SMN1",
     "achondroplasia": "FGFR3",
+    "fanconi anemia": "FANCA",
+    "fanconi anaemia": "FANCA",
+    "fanconi": "FANCA",
+    "ataxia telangiectasia": "ATM",
+    "bloom syndrome": "BLM",
+    "xeroderma pigmentosum": "XPA",
+    "cockayne syndrome": "ERCC8",
+    "werner syndrome": "WRN",
+    "nijmegen breakage": "NBN",
 }
 
 from Bio import Entrez
@@ -106,28 +115,75 @@ def fetch_from_uniprot(gene_symbol):
 
 # ─── PDB AUTO-FETCH ──────────────────────────────────────────────────────────
 def fetch_pdb_for_gene(gene_symbol, uniprot_accession=""):
+    """Fetch best PDB ID for a gene — tries multiple methods."""
+    import urllib.request, json
+
+    # Hardcoded fallbacks for common genes (PDB fetch APIs are unreliable)
+    KNOWN_PDB = {
+        "TP53": "2OCJ", "BRCA1": "1JM7", "BRCA2": "1MJE", "EGFR": "1IVO",
+        "KRAS": "4OBE", "HBB": "4HHB", "CFTR": "5UAK", "HTT": "4FE8",
+        "APP": "1AAP", "PTEN": "1D5R", "RB1": "2AZE", "MLH1": "4P7A",
+        "PARK2": "3CHR", "INS": "3I40", "PAH": "1PHZ", "FBN1": "2UHX",
+        "DYRK1A": "2WO6", "DMD": "1DXX", "FMR1": "3RKU", "NF1": "3PG7",
+        "MECP2": "3C2I", "TSC1": "3CH4", "SMN1": "1MFQ", "FGFR3": "4K33",
+        "F8": "2R7E", "F9": "1CFH", "GBA": "2NSX", "HEXA": "2GSU",
+        "ATP7B": "2ARF", "COL1A1": "1BKV", "COL5A1": "2V53",
+        "FBN1": "2UHX", "DYRK1A": "2WO6", "ACTA1": "3EKS",
+    }
+    if gene_symbol.upper() in KNOWN_PDB:
+        return KNOWN_PDB[gene_symbol.upper()]
+
     try:
-        import urllib.request, json
+        # Method 1: UniProt accession → RCSB
         if uniprot_accession:
+            url = f"https://data.rcsb.org/rest/v1/core/uniprot/{uniprot_accession}"
             try:
-                url = f"https://data.rcsb.org/rest/v1/core/uniprot/{uniprot_accession}"
                 req = urllib.request.Request(url, headers={"User-Agent": "GeneScope/1.0"})
                 with urllib.request.urlopen(req, timeout=6) as r:
                     data = json.loads(r.read().decode())
-                if data and isinstance(data, list) and data[0].get("rcsb_id"):
-                    return data[0]["rcsb_id"].split("_")[0]
+                if data and isinstance(data, list) and len(data) > 0:
+                    pdb = data[0].get("rcsb_id", "")
+                    if pdb: return pdb.split("_")[0]
             except: pass
+
+        # Method 2: RCSB GraphQL search by gene name
+        gql_url = "https://data.rcsb.org/graphql"
+        gql_query = {
+            "query": f"""{{
+              entries(entry_ids: []) {{
+                rcsb_id
+              }}
+            }}"""
+        }
+        # Method 3: RCSB text search
         search_url = "https://search.rcsb.org/rcsbsearch/v2/query"
-        query = {"query": {"type": "terminal", "service": "full_text", "parameters": {"value": f"{gene_symbol} human"}},
-                 "return_type": "entry", "request_options": {"results_slice": {"start": 0, "limit": 1},
-                 "sort": [{"sort_by": "score", "direction": "descending"}]}}
+        query = {
+            "query": {
+                "type": "group",
+                "logical_operator": "and",
+                "nodes": [
+                    {"type": "terminal", "service": "text",
+                     "parameters": {"attribute": "rcsb_entity_source_organism.taxonomy_lineage.name",
+                                    "operator": "exact_match", "value": "Homo sapiens"}},
+                    {"type": "terminal", "service": "text",
+                     "parameters": {"attribute": "rcsb_polymer_entity.pdbx_gene_src_gene",
+                                    "operator": "contains_words", "value": gene_symbol}}
+                ]
+            },
+            "return_type": "entry",
+            "request_options": {
+                "results_slice": {"start": 0, "limit": 1},
+                "sort": [{"sort_by": "score", "direction": "descending"}]
+            }
+        }
         req = urllib.request.Request(search_url, data=json.dumps(query).encode(),
               headers={"Content-Type": "application/json", "User-Agent": "GeneScope/1.0"}, method="POST")
         with urllib.request.urlopen(req, timeout=8) as r:
             data = json.loads(r.read().decode())
         results = data.get("result_set", [])
-        return results[0]["identifier"] if results else None
-    except: return None
+        if results: return results[0]["identifier"]
+    except: pass
+    return None
 
 
 # ─── NCBI FULL FETCH ─────────────────────────────────────────────────────────
@@ -605,6 +661,9 @@ def main():
                     and st.session_state.get("ncbi_gene") is not None
                 )
                 if not already_fetched:
+                    for key in ["ncbi_protein", "ncbi_mutation_result",
+                                "ncbi_local_protein", "ncbi_local_mutation_result"]:
+                        st.session_state.pop(key, None)
                     with st.spinner("Searching NCBI, UniProt & PDB..."):
                         ncbi, error = fetch_from_ncbi(search_term)
                     if ncbi:
@@ -613,7 +672,6 @@ def main():
                     else:
                         st.session_state["ncbi_gene"] = None
                         st.warning(f"⚠️ {error}")
-                # Show the found badge without re-fetching
                 if st.session_state.get("ncbi_gene"):
                     ncbi_cached = st.session_state["ncbi_gene"]
                     st.success(f"🌐 Found: **{ncbi_cached['name']}** — {ncbi_cached['full_name']}")
@@ -623,6 +681,24 @@ def main():
             st.info("GeneScope — gene analytics dashboard with live NCBI, UniProt & PDB integration, 3D protein viewer, mutation simulator, and 2D sequence analysis.")
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ── DIRECT PDB ID SEARCH ──────────────────────────────────────────────
+    # If search looks like a PDB ID (4 chars, alphanumeric), show 3D viewer directly
+    import re
+    if (search_term and len(search_term.strip()) == 4 
+        and re.match(r'^[0-9][A-Za-z0-9]{3}$', search_term.strip())):
+        pdb_input = search_term.strip().upper()
+        st.markdown(
+            f"<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;"
+            f"padding:14px 20px;margin-bottom:16px;'>"
+            f"<div style='font-size:11px;color:#2563eb;font-weight:700;text-transform:uppercase;"
+            f"letter-spacing:0.5px;margin-bottom:4px;'>Direct PDB structure viewer</div>"
+            f"<div style='font-size:20px;font-weight:700;color:#0a2540;'>PDB: {pdb_input}</div>"
+            f"</div>",
+            unsafe_allow_html=True)
+        show_3d_protein(pdb_input)
+        st.markdown(f"[View on RCSB PDB ↗](https://www.rcsb.org/structure/{pdb_input})")
+        st.stop()
+            
     # ── DECIDE: NCBI profile or local gene ───────────────────────────────────
     show_ncbi = (
         bool(search_term)
