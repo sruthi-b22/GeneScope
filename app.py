@@ -477,18 +477,80 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
         ov1.metric("Original protein length", f"{orig_len} aa")
         ov2.metric("Mutated protein length", f"{mut_len} aa", delta=f"{len_diff:+d} aa")
         ov3.metric("GC content change", f"{mut_gc:.1f}%", delta=f"{mut_gc - orig_gc:+.1f}%")
+        # Extra metrics row
+        orig_hydro = average_hydrophobicity(res["original_protein"])
+        mut_hydro  = average_hydrophobicity(res["mutated_protein"])
+        orig_mw    = molecular_weight_dna(res["original_seq"])
+        mut_mw     = molecular_weight_dna(res["mutated_seq"])
+        min_len    = min(len(res["original_protein"]), len(res["mutated_protein"]))
+        aa_changes = sum(1 for i in range(min_len) if res["original_protein"][i] != res["mutated_protein"][i])
+
+        ov4, ov5, ov6 = st.columns(3)
+        ov4.metric("Hydrophobicity change", f"{mut_hydro:.2f}", delta=f"{mut_hydro - orig_hydro:+.2f}", delta_color="off")
+        ov5.metric("DNA weight change",     f"{mut_mw:,.0f} Da", delta=f"{mut_mw - orig_mw:+,.0f} Da", delta_color="off")
+        ov6.metric("Amino acids changed",   f"{aa_changes}")
+
+        # Detailed classification
+        HYDROPHOBIC = set("AVILMFYW"); CHARGED = set("DEKRH")
+        diffs = [(i+1, res["original_protein"][i], res["mutated_protein"][i])
+                 for i in range(min_len)
+                 if res["original_protein"][i] != res["mutated_protein"][i]]
+        diff_str = ", ".join([f"pos {p}: {o}→{m}" for p, o, m in diffs[:5]])
+
         if res["original_protein"] == res["mutated_protein"]:
-            st.success("Silent mutation (synonymous) — protein unchanged.")
+            severity = "🟢 Silent"
+            st.success(
+                "**✅ Silent mutation (synonymous)** — the protein sequence is completely unchanged. "
+                "The DNA change did not alter any codon's amino acid, meaning this mutation has **no effect** "
+                "on protein structure or function. These mutations are common and usually harmless.")
         elif len_diff < 0:
-            st.error(f"Frameshift mutation — protein shorter by {abs(len_diff)} aa. Likely loss of function.")
+            severity = "🔴 Frameshift"
+            st.error(
+                f"**🔴 Frameshift mutation** — protein shorter by **{abs(len_diff)} amino acids**.\n\n"
+                f"A deletion shifts the reading frame, causing the ribosome to read completely different codons "
+                f"from the mutation point onwards. This usually creates a **premature stop codon**, producing "
+                f"a truncated, non-functional protein.\n\n"
+                f"**Changed amino acids (first 5):** {diff_str if diff_str else 'see 2D viewer'}\n\n"
+                f"**Severity:** High — frameshifts are among the most damaging mutation types. "
+                f"Associated with complete loss of protein function. Example: many DMD (Duchenne muscular dystrophy) "
+                f"mutations are frameshifts in the dystrophin gene.")
         elif len_diff > 0:
-            st.warning(f"Read-through mutation — protein longer by {len_diff} aa.")
+            severity = "🟡 Read-through"
+            st.warning(
+                f"**🟡 Read-through mutation** — protein longer by **{len_diff} amino acids**.\n\n"
+                f"An insertion shifts the reading frame, causing the ribosome to read past the normal stop codon "
+                f"and add extra amino acids to the C-terminus. This can **disrupt protein folding** and may "
+                f"interfere with downstream protein interactions.\n\n"
+                f"**Changed amino acids (first 5):** {diff_str if diff_str else 'see 2D viewer'}\n\n"
+                f"**Severity:** Moderate to high — extra C-terminal residues can trigger protein degradation.")
         else:
-            diffs = [(i+1, res["original_protein"][i], res["mutated_protein"][i])
-                     for i in range(min(len(res["original_protein"]), len(res["mutated_protein"])))
-                     if res["original_protein"][i] != res["mutated_protein"][i]]
-            diff_str = ", ".join([f"pos {p}: {o}→{m}" for p, o, m in diffs[:5]])
-            st.warning(f"Missense mutation — same length, changed amino acids: {diff_str if diff_str else 'see 2D viewer above'}.")
+            non_conservative = [(p, o, m) for p, o, m in diffs
+                                if (o in HYDROPHOBIC) != (m in HYDROPHOBIC)
+                                or (o in CHARGED) != (m in CHARGED)]
+            conservatism = "non-conservative" if non_conservative else "conservative"
+            severity_text = "Moderate to high" if non_conservative else "Low to moderate"
+            severity = "🟠 Missense"
+            if not diffs:
+                st.success("**✅ Silent mutation** — protein sequence unchanged despite DNA change.")
+            else:
+                st.warning(
+                    f"**🟠 Missense mutation** — {len(diffs)} amino acid(s) changed, same length ({mut_len} aa).\n\n"
+                    f"**Changed positions:** {diff_str}\n\n"
+                    f"This is a **{conservatism} substitution** — "
+                    f"{'the new amino acid has different chemical properties (charge/hydrophobicity), more likely to disrupt protein folding.' if non_conservative else 'the new amino acid has similar chemical properties, so structural impact may be minimal.'}\n\n"
+                    f"**Severity:** {severity_text}. Example: HBB **Glu6Val** causes sickle cell anaemia by "
+                    f"changing a charged glutamate to a hydrophobic valine, causing haemoglobin to aggregate.")
+
+        # Summary badge
+        st.markdown(
+            f"<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"
+            f"padding:12px 16px;margin-top:12px;display:flex;gap:24px;flex-wrap:wrap;font-size:13px;'>"
+            f"<span><strong>Type:</strong> {severity}</span>"
+            f"<span><strong>Length Δ:</strong> {len_diff:+d} aa</span>"
+            f"<span><strong>GC Δ:</strong> {mut_gc - orig_gc:+.1f}%</span>"
+            f"<span><strong>AA changes:</strong> {aa_changes}</span>"
+            f"<span><strong>Hydrophobicity Δ:</strong> {mut_hydro - orig_hydro:+.2f}</span>"
+            f"</div>", unsafe_allow_html=True)
 
 def render_translation(seq, key_prefix="local"):
     st.markdown(section_header("Protein translation"), unsafe_allow_html=True)
