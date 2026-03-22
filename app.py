@@ -29,53 +29,39 @@ CONSERVATION = {
 }
 
 DISEASE_GENE_MAP = {
-    # Chromosomal
     "down syndrome": "DYRK1A", "down's syndrome": "DYRK1A", "trisomy 21": "DYRK1A",
-    # Neurological
     "alzheimer": "APP", "alzheimer's": "APP", "alzheimer's disease": "APP", "alzheimers": "APP",
     "parkinson": "PARK2", "parkinson's": "PARK2", "parkinson's disease": "PARK2", "parkinsons": "PARK2",
-    "huntington": "HTT", "huntington's": "HTT", "huntington's disease": "HTT", "huntington disease": "HTT",
-    "huntingtons": "HTT",
-    # Structural/connective tissue
+    "huntington": "HTT", "huntington's": "HTT", "huntington's disease": "HTT",
+    "huntington disease": "HTT", "huntingtons": "HTT",
     "marfan syndrome": "FBN1", "marfan's syndrome": "FBN1", "marfans": "FBN1", "marfan": "FBN1",
     "ehlers danlos": "COL5A1", "osteogenesis imperfecta": "COL1A1",
-    # Metabolic
     "cystic fibrosis": "CFTR", "phenylketonuria": "PAH", "pku": "PAH",
     "gaucher disease": "GBA", "gaucher's disease": "GBA",
     "tay sachs": "HEXA", "tay-sachs": "HEXA",
     "wilson disease": "ATP7B", "wilson's disease": "ATP7B",
-    # Blood
-    "sickle cell": "HBB", "sickle cell anaemia": "HBB", "sickle cell anemia": "HBB", "sickle cell disease": "HBB",
-    "hemophilia a": "F8", "haemophilia a": "F8", "hemophilia b": "F9",
+    "sickle cell": "HBB", "sickle cell anaemia": "HBB", "sickle cell anemia": "HBB",
+    "sickle cell disease": "HBB", "hemophilia a": "F8", "haemophilia a": "F8", "hemophilia b": "F9",
     "thalassemia": "HBB", "beta thalassemia": "HBB",
-    # Cancer
     "breast cancer": "BRCA1", "hereditary breast cancer": "BRCA1", "ovarian cancer": "BRCA1",
     "colon cancer": "MLH1", "colorectal cancer": "MLH1", "lynch syndrome": "MLH1",
     "li-fraumeni": "TP53", "li fraumeni": "TP53",
     "retinoblastoma": "RB1", "lung cancer": "EGFR", "non-small cell lung cancer": "EGFR",
-    # Other
     "diabetes": "INS", "type 1 diabetes": "INS",
     "muscular dystrophy": "DMD", "duchenne": "DMD", "duchenne muscular dystrophy": "DMD",
     "fragile x": "FMR1", "fragile x syndrome": "FMR1",
     "rett syndrome": "MECP2", "neurofibromatosis": "NF1",
     "tuberous sclerosis": "TSC1", "spinal muscular atrophy": "SMN1", "sma": "SMN1",
     "achondroplasia": "FGFR3",
-    "fanconi anemia": "FANCA",
-    "fanconi anaemia": "FANCA",
-    "fanconi": "FANCA",
-    "ataxia telangiectasia": "ATM",
-    "bloom syndrome": "BLM",
-    "xeroderma pigmentosum": "XPA",
-    "cockayne syndrome": "ERCC8",
-    "werner syndrome": "WRN",
-    "nijmegen breakage": "NBN",
+    "fanconi anemia": "FANCA", "fanconi anaemia": "FANCA", "fanconi": "FANCA",
+    "ataxia telangiectasia": "ATM", "bloom syndrome": "BLM",
+    "xeroderma pigmentosum": "XPA", "cockayne syndrome": "ERCC8",
+    "werner syndrome": "WRN", "nijmegen breakage": "NBN",
 }
 
 from Bio import Entrez
 Entrez.email = "sruthibalasubramani6@gmail.com"
 
-
-# ─── UNIPROT LIVE FETCH ──────────────────────────────────────────────────────
 def fetch_from_uniprot(gene_symbol):
     try:
         import urllib.request, json
@@ -112,13 +98,8 @@ def fetch_from_uniprot(gene_symbol):
                 "uniprot_url": f"https://www.uniprot.org/uniprotkb/{accession}"}
     except: return None
 
-
-# ─── PDB AUTO-FETCH ──────────────────────────────────────────────────────────
 def fetch_pdb_for_gene(gene_symbol, uniprot_accession=""):
-    """Fetch best PDB ID for a gene — tries multiple methods."""
     import urllib.request, json
-
-    # Hardcoded fallbacks for common genes (PDB fetch APIs are unreliable)
     KNOWN_PDB = {
         "TP53": "2OCJ", "BRCA1": "1JM7", "BRCA2": "1MJE", "EGFR": "1IVO",
         "KRAS": "4OBE", "HBB": "4HHB", "CFTR": "5UAK", "HTT": "4FE8",
@@ -127,17 +108,14 @@ def fetch_pdb_for_gene(gene_symbol, uniprot_accession=""):
         "DYRK1A": "2WO6", "DMD": "1DXX", "FMR1": "3RKU", "NF1": "3PG7",
         "MECP2": "3C2I", "TSC1": "3CH4", "SMN1": "1MFQ", "FGFR3": "4K33",
         "F8": "2R7E", "F9": "1CFH", "GBA": "2NSX", "HEXA": "2GSU",
-        "ATP7B": "2ARF", "COL1A1": "1BKV", "COL5A1": "2V53",
-        "FBN1": "2UHX", "DYRK1A": "2WO6", "ACTA1": "3EKS",
+        "ATP7B": "2ARF", "COL1A1": "1BKV", "COL5A1": "2V53", "ACTA1": "3EKS",
     }
     if gene_symbol.upper() in KNOWN_PDB:
         return KNOWN_PDB[gene_symbol.upper()]
-
     try:
-        # Method 1: UniProt accession → RCSB
         if uniprot_accession:
-            url = f"https://data.rcsb.org/rest/v1/core/uniprot/{uniprot_accession}"
             try:
+                url = f"https://data.rcsb.org/rest/v1/core/uniprot/{uniprot_accession}"
                 req = urllib.request.Request(url, headers={"User-Agent": "GeneScope/1.0"})
                 with urllib.request.urlopen(req, timeout=6) as r:
                     data = json.loads(r.read().decode())
@@ -145,36 +123,19 @@ def fetch_pdb_for_gene(gene_symbol, uniprot_accession=""):
                     pdb = data[0].get("rcsb_id", "")
                     if pdb: return pdb.split("_")[0]
             except: pass
-
-        # Method 2: RCSB GraphQL search by gene name
-        gql_url = "https://data.rcsb.org/graphql"
-        gql_query = {
-            "query": f"""{{
-              entries(entry_ids: []) {{
-                rcsb_id
-              }}
-            }}"""
-        }
-        # Method 3: RCSB text search
         search_url = "https://search.rcsb.org/rcsbsearch/v2/query"
         query = {
-            "query": {
-                "type": "group",
-                "logical_operator": "and",
-                "nodes": [
-                    {"type": "terminal", "service": "text",
-                     "parameters": {"attribute": "rcsb_entity_source_organism.taxonomy_lineage.name",
-                                    "operator": "exact_match", "value": "Homo sapiens"}},
-                    {"type": "terminal", "service": "text",
-                     "parameters": {"attribute": "rcsb_polymer_entity.pdbx_gene_src_gene",
-                                    "operator": "contains_words", "value": gene_symbol}}
-                ]
-            },
+            "query": {"type": "group", "logical_operator": "and", "nodes": [
+                {"type": "terminal", "service": "text", "parameters": {
+                    "attribute": "rcsb_entity_source_organism.taxonomy_lineage.name",
+                    "operator": "exact_match", "value": "Homo sapiens"}},
+                {"type": "terminal", "service": "text", "parameters": {
+                    "attribute": "rcsb_polymer_entity.pdbx_gene_src_gene",
+                    "operator": "contains_words", "value": gene_symbol}}
+            ]},
             "return_type": "entry",
-            "request_options": {
-                "results_slice": {"start": 0, "limit": 1},
-                "sort": [{"sort_by": "score", "direction": "descending"}]
-            }
+            "request_options": {"results_slice": {"start": 0, "limit": 1},
+                                 "sort": [{"sort_by": "score", "direction": "descending"}]}
         }
         req = urllib.request.Request(search_url, data=json.dumps(query).encode(),
               headers={"Content-Type": "application/json", "User-Agent": "GeneScope/1.0"}, method="POST")
@@ -185,29 +146,21 @@ def fetch_pdb_for_gene(gene_symbol, uniprot_accession=""):
     except: pass
     return None
 
-
-# ─── NCBI FULL FETCH ─────────────────────────────────────────────────────────
 def fetch_from_ncbi(query):
     try:
-        # Check disease map first
         query_lower = query.lower().strip()
         if query_lower in DISEASE_GENE_MAP:
             query = DISEASE_GENE_MAP[query_lower]
-
         handle = Entrez.esearch(db="gene", term=f"{query}[Gene Name] AND Homo sapiens[Organism]", retmax=1)
         record = Entrez.read(handle); handle.close()
-
         if not record["IdList"]:
             handle = Entrez.esearch(db="gene",
                 term=f"{query}[Title] AND Homo sapiens[Organism] AND protein coding[Gene Type]", retmax=1)
             record = Entrez.read(handle); handle.close()
-
         if not record["IdList"]:
             handle = Entrez.esearch(db="gene", term=f"{query} AND Homo sapiens[Organism]", retmax=1)
             record = Entrez.read(handle); handle.close()
-
         if not record["IdList"]: return None, "Gene not found on NCBI"
-
         gene_id = record["IdList"][0]
         handle = Entrez.esummary(db="gene", id=gene_id)
         summary = Entrez.read(handle); handle.close()
@@ -215,7 +168,6 @@ def fetch_from_ncbi(query):
         gene_symbol  = str(info["Name"]); full_name = str(info["Description"])
         aliases      = str(info.get("OtherAliases", "—")); summary_text = str(info.get("Summary", "No summary available."))
         chromosome   = str(info.get("Chromosome", "—")); location = str(info.get("MapLocation", "—"))
-
         seq_handle = Entrez.esearch(db="nucleotide",
             term=f"{gene_symbol}[Gene Name] AND Homo sapiens[Organism] AND mRNA[Filter] AND RefSeq[Filter]", retmax=1)
         seq_record = Entrez.read(seq_handle); seq_handle.close()
@@ -229,11 +181,9 @@ def fetch_from_ncbi(query):
                 header = lines[0]
                 refseq_id = header.split("|")[1] if "|" in header and len(header.split("|")) > 1 else header.split()[0].replace(">", "")
             dna_sequence = "".join(lines[1:])[:500]
-
         uniprot_data = fetch_from_uniprot(gene_symbol)
         uniprot_acc  = uniprot_data["accession"] if uniprot_data else ""
         pdb          = fetch_pdb_for_gene(gene_symbol, uniprot_acc)
-
         return {"name": gene_symbol, "full_name": full_name, "aliases": aliases, "summary": summary_text,
                 "chromosome": chromosome, "location": location, "ncbi_id": gene_id,
                 "sequence": dna_sequence, "refseq_id": refseq_id,
@@ -243,12 +193,9 @@ def fetch_from_ncbi(query):
                 "uniprot_accession":    uniprot_acc,
                 "uniprot_url":          uniprot_data["uniprot_url"]           if uniprot_data else "",
                 "pdb_id":               pdb or ""}, None
-
     except ImportError: return None, "biopython not installed — add it to requirements.txt"
     except Exception as e: return None, f"NCBI error: {str(e)}"
 
-
-# ─── GENE LOADER ─────────────────────────────────────────────────────────────
 def load_genes():
     genes = []
     if not GENE_DB:
@@ -263,8 +210,6 @@ def load_genes():
             "variants": meta.get("variants", []), "pdb_id": meta.get("pdb_id", "")})
     return genes
 
-
-# ─── SEQUENCE HELPERS ────────────────────────────────────────────────────────
 def normalize_seq(seq): return "".join(str(seq or "").upper().split())
 def gc_content_percent(s):
     seq = normalize_seq(s); return 0.0 if not seq else sum(1 for c in seq if c in "GC") / len(seq) * 100
@@ -315,8 +260,6 @@ def interpret_protein(p):
     elif len(p) < 20: return "Short peptide — may not form a functional protein."
     else: return "Protein sequence generated — potential functional molecule."
 
-
-# ─── 2D VIEWERS ──────────────────────────────────────────────────────────────
 def render_2d_sequence(seq, label="DNA Sequence", highlight_pos=None, font_size=13):
     BC = {"A": "#16a34a", "T": "#dc2626", "G": "#2563eb", "C": "#d97706"}
     chunk = 60; rows = [seq[i:i+chunk] for i in range(0, len(seq), chunk)]
@@ -355,8 +298,6 @@ def render_2d_protein(protein, label="Protein Sequence", highlight_pos=None, fon
         html += "</div>"
     html += "</div>"; return html
 
-
-# ─── 3D VIEWER ───────────────────────────────────────────────────────────────
 def show_3d_protein(pdb_id):
     st.markdown(
         f"<div style='font-size:11px;font-weight:600;color:#8898b3;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;'>3D Structure — PDB: {pdb_id}</div>"
@@ -367,18 +308,54 @@ def show_3d_protein(pdb_id):
         f"<span><span style='color:#ef4444;font-weight:700;'>■</span> C-terminus (red)</span>"
         f"<span style='color:#94a3b8;'>| Scroll to zoom · Drag to rotate</span></div>",
         unsafe_allow_html=True)
-    view = py3Dmol.view(query=f"pdb:{pdb_id}", height=480, width=750)
-    view.setStyle({"cartoon": {"color": "spectrum"}})
-    view.addSurface(py3Dmol.VDW, {"opacity": 0.15, "color": "white"})
-    view.setHoverable({}, True,
-        "function(atom,viewer){if(!atom.label){atom.label=viewer.addLabel(atom.resn+':'+atom.resi,{position:atom,backgroundColor:'white',fontColor:'#0a2540',fontSize:12});}}",
-        "function(atom,viewer){if(atom.label){viewer.removeLabel(atom.label);delete atom.label;}}")
-    view.spin(False); view.zoomTo()
-    components.html(view._make_html(), height=520, width=780)
-    st.caption("Scroll to zoom · Click and drag to rotate · Right-click to pan")
+    html_content = f"""
+    <div id="viewport" style="width:100%;height:500px;background:#1a1a2e;border-radius:10px;position:relative;"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.1/3Dmol-min.js"></script>
+    <script>
+        function load3D() {{
+            var element = document.getElementById('viewport');
+            if (!element) {{ setTimeout(load3D, 200); return; }}
+            var viewer = $3Dmol.createViewer(element, {{backgroundColor: '#1a1a2e'}});
+            $3Dmol.download("pdb:{pdb_id}", viewer, {{}}, function() {{
+                viewer.setStyle({{}}, {{cartoon: {{color: 'spectrum'}}}});
+                viewer.addSurface($3Dmol.SurfaceType.VDW, {{opacity: 0.12, color: 'white'}});
+                viewer.zoomTo(); viewer.render(); viewer.zoom(0.9);
+            }});
+            viewer.setHoverable({{}}, true,
+                function(atom, viewer) {{
+                    if (!atom.label) {{
+                        atom.label = viewer.addLabel(atom.resn+":"+atom.resi,
+                            {{position:atom,backgroundColor:'white',fontColor:'#0a2540',fontSize:12,backgroundOpacity:0.9}});
+                    }}
+                }},
+                function(atom, viewer) {{
+                    if (atom.label) {{ viewer.removeLabel(atom.label); delete atom.label; }}
+                }}
+            );
+        }}
+        load3D();
+    </script>
+    """
+    components.html(html_content, height=520, scrolling=False)
+    st.caption(f"PDB: {pdb_id} · Scroll to zoom · Drag to rotate · Right-click to pan")
+    st.markdown(f"[View on RCSB PDB ↗](https://www.rcsb.org/structure/{pdb_id})")
 
+def render_3d_button(pdb_id, key_prefix):
+    loaded_key = f"{key_prefix}_3d_loaded"
+    pdb_key    = f"{key_prefix}_3d_pdb"
+    if loaded_key not in st.session_state: st.session_state[loaded_key] = False
+    if pdb_key not in st.session_state:    st.session_state[pdb_key] = ""
+    if st.session_state[pdb_key] != pdb_id:
+        st.session_state[loaded_key] = False
+        st.session_state[pdb_key] = pdb_id
+    if not st.session_state[loaded_key]:
+        if st.button("Load 3D structure", key=f"{key_prefix}_3d_btn"):
+            st.session_state[loaded_key] = True
+            st.rerun()
+        st.caption(f"PDB ID: {pdb_id} — click to load · scroll to zoom · drag to rotate")
+    else:
+        show_3d_protein(pdb_id)
 
-# ─── UI HELPERS ──────────────────────────────────────────────────────────────
 def metric_card(label, value, sub=""):
     s = f"<div style='font-size:12px;color:#8898b3;margin-top:4px;'>{sub}</div>" if sub else ""
     return (f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;'>"
@@ -389,8 +366,6 @@ def section_header(title):
     return (f"<div style='font-size:13px;font-weight:700;color:#0a2540;text-transform:uppercase;"
             f"letter-spacing:0.5px;margin:1.2rem 0 0.8rem;padding-bottom:8px;border-bottom:1px solid #e2e8f0;'>{title}</div>")
 
-
-# ─── SHARED MUTATION BLOCK (used for both local + NCBI genes) ────────────────
 def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
     st.markdown(section_header("Mutation simulator"), unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
@@ -406,10 +381,8 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
         else:
             new_base = None
             st.markdown("<div style='padding-top:28px;color:#8898b3;font-size:13px;'>No base needed for deletion</div>", unsafe_allow_html=True)
-
     mr_key = f"{key_prefix}_mutation_result"
     if mr_key not in st.session_state: st.session_state[mr_key] = None
-
     if st.button("Apply mutation", key=f"{key_prefix}_apply_mut_btn"):
         ob = seq[position - 1]
         if mut_type == "Substitution (change a base)":
@@ -426,12 +399,10 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
             "original_protein": translate_dna_to_protein(seq),
             "mutated_protein": translate_dna_to_protein(mutated_seq),
         }
-
     if st.session_state[mr_key]:
         res = st.session_state[mr_key]
         st.markdown(f"<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#78350f;font-weight:600;margin:8px 0;'>{res['mut_label']}</div>", unsafe_allow_html=True)
         zoom_m = st.slider("Zoom sequence", 10, 20, 13, key=f"{key_prefix}_mut_zoom")
-
         st.markdown(section_header("DNA — before vs after"), unsafe_allow_html=True)
         d1, d2 = st.columns(2)
         with d1:
@@ -442,7 +413,6 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
             dh2 = max(140, (len(res["mutated_seq"]) // 60 + 1) * (zoom_m + 8) + 60)
             components.html(render_2d_sequence(res["mutated_seq"], "Mutated DNA", highlight_pos=position, font_size=zoom_m), height=dh2, scrolling=True)
             st.caption(f"Length: {len(res['mutated_seq'])} bp")
-
         st.markdown(section_header("Protein — before vs after"), unsafe_allow_html=True)
         p1, p2 = st.columns(2)
         with p1:
@@ -455,7 +425,6 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
             components.html(render_2d_protein(res["mutated_protein"], "Mutated protein", font_size=zoom_m), height=ph2, scrolling=True)
             st.caption(f"Length: {len(res['mutated_protein'])} aa")
             st.markdown(f"<div style='background:#fef2f2;border-left:3px solid #dc2626;padding:8px 12px;font-size:12px;color:#7f1d1d;margin-top:4px;'>{interpret_protein(res['mutated_protein'])}</div>", unsafe_allow_html=True)
-
         if pdb_id:
             st.markdown(section_header("3D structure — before vs after mutation"), unsafe_allow_html=True)
             t1, t2 = st.columns(2)
@@ -467,7 +436,6 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
                 ph_mut = max(200, (len(res["mutated_protein"]) // 40 + 1) * (zoom_m + 10) + 80)
                 components.html(render_2d_protein(res["mutated_protein"], "Mutated protein — full sequence", font_size=zoom_m), height=ph_mut, scrolling=True)
                 st.markdown("<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:12px;color:#78350f;margin-top:8px;'><strong>Why no 3D for mutated?</strong><br>Custom mutations create novel sequences that don't exist in PDB. In real research, tools like AlphaFold2 predict the 3D structure of mutated sequences. The 2D viewer above shows all amino acid changes.</div>", unsafe_allow_html=True)
-
         st.markdown(section_header("Mutation impact overview"), unsafe_allow_html=True)
         orig_len = len(res["original_protein"]); mut_len = len(res["mutated_protein"]); len_diff = mut_len - orig_len
         orig_gc = gc_content_percent(res["original_seq"]); mut_gc = gc_content_percent(res["mutated_seq"])
@@ -475,46 +443,25 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
         ov1.metric("Original protein length", f"{orig_len} aa")
         ov2.metric("Mutated protein length", f"{mut_len} aa", delta=f"{len_diff:+d} aa")
         ov3.metric("GC content change", f"{mut_gc:.1f}%", delta=f"{mut_gc - orig_gc:+.1f}%")
-
         if res["original_protein"] == res["mutated_protein"]:
-            st.success("✅ Silent mutation (synonymous) — the protein sequence is completely unchanged. The DNA change did not alter any amino acid, meaning this mutation has no effect on protein function.")
+            st.success("Silent mutation (synonymous) — protein unchanged.")
         elif len_diff < 0:
-            st.error(
-                f"🔴 Frameshift mutation — protein is shorter by {abs(len_diff)} amino acids.\n\n"
-                "A frameshift occurs when a deletion or insertion shifts the reading frame, causing the ribosome "
-                "to read different codons downstream. This usually introduces a premature stop codon, producing "
-                "a truncated, non-functional protein. Frameshift mutations are often the most severe type — they "
-                "can completely destroy protein function and are associated with serious genetic diseases.")
+            st.error(f"Frameshift mutation — protein shorter by {abs(len_diff)} aa. Likely loss of function.")
         elif len_diff > 0:
-            st.warning(
-                f"🟡 Read-through mutation — protein is longer by {len_diff} amino acids.\n\n"
-                "An insertion before a stop codon can cause the ribosome to read past the normal stop, producing "
-                "a longer protein with extra amino acids at the C-terminus. This can disrupt protein folding and "
-                "may affect function depending on the location of the insertion.")
+            st.warning(f"Read-through mutation — protein longer by {len_diff} aa.")
         else:
             diffs = [(i+1, res["original_protein"][i], res["mutated_protein"][i])
                      for i in range(min(len(res["original_protein"]), len(res["mutated_protein"])))
                      if res["original_protein"][i] != res["mutated_protein"][i]]
-            diff_str = ", ".join([f"position {p}: {o}→{m}" for p, o, m in diffs[:5]])
-            st.warning(
-                f"🟠 Missense mutation — protein sequence changed but same length ({mut_len} aa).\n\n"
-                f"Changed amino acids: {diff_str if diff_str else 'see 2D viewer above'}.\n\n"
-                "A missense mutation substitutes one amino acid for another. The impact depends on the chemical "
-                "properties of the original vs new amino acid. Conservative substitutions (e.g. one hydrophobic "
-                "for another) may have little effect, while non-conservative changes (e.g. charged to neutral) "
-                "can drastically alter protein folding and function. Many disease-causing mutations are missense "
-                "— for example, the HBB Glu6Val substitution causes sickle cell anaemia.")
+            diff_str = ", ".join([f"pos {p}: {o}→{m}" for p, o, m in diffs[:5]])
+            st.warning(f"Missense mutation — same length, changed amino acids: {diff_str if diff_str else 'see 2D viewer above'}.")
 
-
-# ─── SHARED TRANSLATION BLOCK ─────────────────────────────────────────────────
 def render_translation(seq, key_prefix="local"):
     st.markdown(section_header("Protein translation"), unsafe_allow_html=True)
     prot_key = f"{key_prefix}_protein"
     if prot_key not in st.session_state: st.session_state[prot_key] = None
-
     if st.button("Translate to protein", key=f"{key_prefix}_translate_btn"):
         st.session_state[prot_key] = translate_dna_to_protein(seq)
-
     if st.session_state[prot_key]:
         prot = st.session_state[prot_key]
         zoom_t = st.slider("Zoom", 10, 20, 13, key=f"{key_prefix}_prot_zoom")
@@ -533,12 +480,9 @@ def render_translation(seq, key_prefix="local"):
             hydro = average_hydrophobicity(prot)
             st.markdown(f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-top:24px;'><div style='font-size:11px;color:#8898b3;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;'>Hydrophobicity (Kyte-Doolittle)</div><div style='font-size:2rem;font-weight:700;color:#0a2540;'>{hydro:.2f}</div><div style='font-size:12px;color:#8898b3;margin-top:4px;'>{'Hydrophobic — likely membrane-associated' if hydro>0 else 'Hydrophilic — likely soluble/cytoplasmic'}</div></div>", unsafe_allow_html=True)
 
-
-# ─── SHARED VIZ BLOCK ────────────────────────────────────────────────────────
 def render_visualization(seq, gc, selected_gene_name, description, species_map=None):
     if px is None or np is None or go is None:
-        st.warning("Plotly not installed. Run: pip install plotly")
-        return
+        st.warning("Plotly not installed."); return
     series = pd.Series(list(seq)); counts = series.value_counts().reindex(["A","C","G","T"]).fillna(0); total = counts.sum()
     st.markdown(section_header("Nucleotide composition"), unsafe_allow_html=True)
     v1, v2 = st.columns(2)
@@ -565,7 +509,6 @@ def render_visualization(seq, gc, selected_gene_name, description, species_map=N
             df.update_layout(template="plotly_white", height=240, margin=dict(t=20,b=10,l=10,r=10),
                 paper_bgcolor="#ffffff", font=dict(family="Inter,sans-serif",color="#0a2540"))
             st.plotly_chart(df, use_container_width=True)
-
     st.markdown(section_header("Sequence stability heatmap"), unsafe_allow_html=True)
     if len(seq) > 0:
         gc_matrix = np.zeros((10, 10))
@@ -578,7 +521,6 @@ def render_visualization(seq, gc, selected_gene_name, description, species_map=N
             xaxis_title="Segment column", yaxis_title="Segment row",
             font=dict(family="Inter,sans-serif",color="#0a2540"), margin=dict(t=35,l=30,r=30,b=30))
         st.plotly_chart(hm, use_container_width=True)
-
     if species_map:
         st.markdown(section_header("BLAST — sequence conservation"), unsafe_allow_html=True)
         cdf = pd.DataFrame({"Species": list(species_map.keys()),
@@ -591,14 +533,9 @@ def render_visualization(seq, gc, selected_gene_name, description, species_map=N
     else:
         st.markdown(section_header("BLAST — sequence conservation"), unsafe_allow_html=True)
         st.caption("Conservation data not available for this gene.")
-
     st.markdown(section_header("Gene fact sheet"), unsafe_allow_html=True)
     st.info(f"**{selected_gene_name}** — {description[:400] if description else 'No description available.'}")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAIN
-# ═══════════════════════════════════════════════════════════════════════════════
 def main():
     st.set_page_config(page_title="GeneScope", layout="wide")
     st.markdown("""
@@ -631,7 +568,6 @@ def main():
 
     genes = load_genes(); gene_ids = [g["gene"] for g in genes]
 
-    # ── NAV ──────────────────────────────────────────────────────────────────
     st.markdown("<div style='background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 0 10px;margin-bottom:20px;'>", unsafe_allow_html=True)
     nav1, nav2, nav3 = st.columns([2, 3, 1])
     with nav1:
@@ -641,13 +577,10 @@ def main():
         </div>""", unsafe_allow_html=True)
     with nav2:
         search_term = st.text_input("", "", placeholder="Search gene or disease — e.g. BRCA1, TP53, Down syndrome, cystic fibrosis...")
-
         if not search_term:
             st.session_state["ncbi_gene"] = None
             st.session_state["ncbi_search_term"] = ""
-
         filtered_genes = [g for g in gene_ids if search_term.upper() in g.upper()]
-
         if filtered_genes:
             selected_id = st.selectbox("Matching genes", options=filtered_genes, index=0)
             st.session_state["ncbi_gene"] = None
@@ -655,7 +588,6 @@ def main():
         else:
             selected_id = gene_ids[0]
             if search_term:
-                # ── KEY FIX: only fetch if this is a NEW search ──────────
                 already_fetched = (
                     st.session_state.get("ncbi_search_term", "") == search_term
                     and st.session_state.get("ncbi_gene") is not None
@@ -681,11 +613,9 @@ def main():
             st.info("GeneScope — gene analytics dashboard with live NCBI, UniProt & PDB integration, 3D protein viewer, mutation simulator, and 2D sequence analysis.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── DIRECT PDB ID SEARCH ──────────────────────────────────────────────
-    # If search looks like a PDB ID (4 chars, alphanumeric), show 3D viewer directly
     import re
-    if (search_term and len(search_term.strip()) == 4 
-        and re.match(r'^[0-9][A-Za-z0-9]{3}$', search_term.strip())):
+    if (search_term and len(search_term.strip()) == 4
+            and re.match(r'^[0-9][A-Za-z0-9]{3}$', search_term.strip())):
         pdb_input = search_term.strip().upper()
         st.markdown(
             f"<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;"
@@ -693,39 +623,32 @@ def main():
             f"<div style='font-size:11px;color:#2563eb;font-weight:700;text-transform:uppercase;"
             f"letter-spacing:0.5px;margin-bottom:4px;'>Direct PDB structure viewer</div>"
             f"<div style='font-size:20px;font-weight:700;color:#0a2540;'>PDB: {pdb_input}</div>"
-            f"</div>",
-            unsafe_allow_html=True)
+            f"</div>", unsafe_allow_html=True)
         show_3d_protein(pdb_input)
         st.markdown(f"[View on RCSB PDB ↗](https://www.rcsb.org/structure/{pdb_input})")
         st.stop()
-            
-    # ── DECIDE: NCBI profile or local gene ───────────────────────────────────
+
     show_ncbi = (
-        bool(search_term)
-        and not filtered_genes
+        bool(search_term) and not filtered_genes
         and st.session_state.get("ncbi_gene") is not None
         and st.session_state.get("ncbi_search_term", "") == search_term
     )
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # NCBI LIVE PROFILE — full experience identical to local genes
-    # ══════════════════════════════════════════════════════════════════════════
     if show_ncbi:
-        ncbi = st.session_state["ncbi_gene"]
-        sq   = st.session_state.get("ncbi_search_term", search_term)
-        seq  = normalize_seq(ncbi.get("sequence", ""))
+        ncbi   = st.session_state["ncbi_gene"]
+        sq     = st.session_state.get("ncbi_search_term", search_term)
+        seq    = normalize_seq(ncbi.get("sequence", ""))
         pdb_id = ncbi.get("pdb_id", "")
-        gc   = gc_content_percent(seq) if seq else 0
-        mw   = molecular_weight_dna(seq) if seq else 0
-        tm_e = melting_temperature_tm(seq) if seq else 0
-        tm_w = wallace_tm(seq) if seq else 0
+        gc     = gc_content_percent(seq) if seq else 0
+        mw     = molecular_weight_dna(seq) if seq else 0
+        tm_e   = melting_temperature_tm(seq) if seq else 0
+        tm_w   = wallace_tm(seq) if seq else 0
         gc_sub = "Low GC" if gc < 40 else ("Moderate" if gc <= 60 else "High GC")
         refseq = ncbi.get("refseq_id", "—")
 
         if sq.lower().strip() not in ncbi["name"].lower():
             st.info(f"💡 Searched for '{sq}' — showing most associated gene **{ncbi['name']}**. Disease names map to their primary associated gene on NCBI.")
 
-        # Header banner
         st.markdown(
             f"<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;'>"
             f"<div><div style='font-size:11px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;'>Live data — NCBI · UniProt · PDB</div>"
@@ -735,10 +658,8 @@ def main():
             f"<span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;'>NCBI ✓</span>"
             f"{'<span style=\"background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;\">UniProt ✓</span>' if ncbi.get('protein_name') else '<span style=\"background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;\">UniProt —</span>'}"
             f"{'<span style=\"background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;\">PDB ✓</span>' if pdb_id else '<span style=\"background:#fffbeb;color:#d97706;border:1px solid #fde68a;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;\">PDB not found</span>'}"
-            f"</div></div>",
-            unsafe_allow_html=True)
+            f"</div></div>", unsafe_allow_html=True)
 
-        # Metric cards — identical style to local
         st.markdown(f"""
         <div style='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;'>
             {metric_card("Gene", ncbi['name'], "Live · NCBI")}
@@ -753,7 +674,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-        # ── SAME 3 TABS as local genes ────────────────────────────────────
         tab_seq, tab_viz, tab_trans = st.tabs(["Sequence analysis", "Visualization", "Translation & mutation"])
 
         with tab_seq:
@@ -766,11 +686,9 @@ def main():
                 <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;'><div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;'>Chromosome</div><div style='font-size:13px;font-weight:600;color:#0a2540;'>Chr {ncbi['chromosome']} · {ncbi['location']}</div></div>
                 <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;'><div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;'>Aliases</div><div style='font-size:13px;font-weight:600;color:#0a2540;'>{ncbi.get('aliases','—')}</div></div>
                 </div>""", unsafe_allow_html=True)
-
                 if ncbi.get("go_function") and ncbi["go_function"] != "—":
                     st.markdown(section_header("GO molecular function"), unsafe_allow_html=True)
                     st.markdown(f"<div style='font-size:13px;color:#475569;line-height:1.7;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;'>{ncbi['go_function']}</div>", unsafe_allow_html=True)
-
             with col_b:
                 st.markdown(section_header("Gene summary"), unsafe_allow_html=True)
                 st.markdown(f"<div style='font-size:13px;color:#475569;line-height:1.8;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;'>{ncbi['summary']}</div>", unsafe_allow_html=True)
@@ -782,8 +700,6 @@ def main():
                     st.markdown(f"<div style='display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;color:#1e40af;font-weight:600;margin-top:4px;'>{len(seq)} bases</div>", unsafe_allow_html=True)
                 else:
                     st.warning("Sequence not available from NCBI for this gene.")
-
-            # External database links
             st.markdown(section_header("External databases"), unsafe_allow_html=True)
             ext1, ext2, ext3 = st.columns(3)
             with ext1:
@@ -807,9 +723,7 @@ def main():
                 render_translation(seq, key_prefix="ncbi")
                 st.markdown(section_header("3D protein structure"), unsafe_allow_html=True)
                 if pdb_id:
-                    if st.button("Load 3D structure", key="ncbi_3d_btn"):
-                        show_3d_protein(pdb_id)
-                    st.caption(f"PDB: {pdb_id} · scroll to zoom · drag to rotate")
+                    render_3d_button(pdb_id, key_prefix="ncbi")
                 else:
                     st.info("No PDB structure found for this gene.")
                 render_mutation_simulator(seq, pdb_id, key_prefix="ncbi")
@@ -818,9 +732,7 @@ def main():
 
         st.stop()
 
-    # ══════════════════════════════════════════════════════════════════════════
     # LOCAL GENE PROFILE
-    # ══════════════════════════════════════════════════════════════════════════
     selected_gene    = next(g for g in genes if g["gene"] == selected_id)
     seq              = normalize_seq(selected_gene["sequence"])
     gc               = gc_content_percent(seq)
@@ -867,7 +779,6 @@ def main():
             with st.expander("View raw DNA sequence", expanded=False):
                 st.code(seq, language="text")
             st.markdown(f"<div style='display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;color:#1e40af;font-weight:600;margin-top:4px;'>{len(seq)} bases</div>", unsafe_allow_html=True)
-
         variants = selected_gene.get("variants", []) or []
         if variants:
             st.markdown(section_header("Clinical variants"), unsafe_allow_html=True)
@@ -894,13 +805,10 @@ def main():
         render_translation(seq, key_prefix="local")
         st.markdown(section_header("3D protein structure"), unsafe_allow_html=True)
         if pdb_id:
-            if st.button("Load 3D structure", key="load_3d_btn"):
-                show_3d_protein(pdb_id)
-            st.caption(f"PDB ID: {pdb_id} — click to load · scroll to zoom · drag to rotate")
+            render_3d_button(pdb_id, key_prefix="local")
         else:
             st.info("No PDB structure available for this gene.")
         render_mutation_simulator(seq, pdb_id, key_prefix="local")
-
 
 if __name__ == "__main__":
     main()
