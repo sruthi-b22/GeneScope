@@ -419,72 +419,164 @@ def main():
         sq   = st.session_state.get("ncbi_search_term", search_term)
         seq  = normalize_seq(ncbi.get("sequence", ""))
 
-        if sq.lower() not in ncbi["name"].lower():
-            st.info(f"💡 Searched for '{sq}' — showing most associated gene **{ncbi['name']}**. Disease names map to their primary associated gene on NCBI.")
+        # Disease context note
+        if sq.lower().strip() not in ncbi["name"].lower():
+            st.info(
+                f"💡 Searched for '{sq}' — showing most associated gene "
+                f"**{ncbi['name']}**. Disease names map to their primary associated gene on NCBI."
+            )
 
+        # Header banner
         st.markdown(
-            f"<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:16px;'>"
-            f"<div style='font-size:11px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;'>Live from NCBI · UniProt · PDB</div>"
+            f"<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;"
+            f"padding:16px 20px;margin-bottom:16px;'>"
+            f"<div style='font-size:11px;color:#2563eb;font-weight:700;text-transform:uppercase;"
+            f"letter-spacing:0.5px;margin-bottom:4px;'>Live from NCBI · UniProt · PDB</div>"
             f"<div style='font-size:22px;font-weight:700;color:#0a2540;'>{ncbi['name']} "
-            f"<span style='font-size:14px;color:#64748b;font-weight:400;'>— {ncbi['full_name']}</span></div></div>",
-            unsafe_allow_html=True)
+            f"<span style='font-size:14px;color:#64748b;font-weight:400;'>— {ncbi['full_name']}</span></div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
-        gc_n=gc_content_percent(seq) if seq else 0; mw_n=molecular_weight_dna(seq) if seq else 0
-        tm_e=melting_temperature_tm(seq) if seq else 0; tm_w=wallace_tm(seq) if seq else 0
-        gc_sub_n="Low GC" if gc_n<40 else ("Moderate" if gc_n<=60 else "High GC")
+        # Metric cards — same style as local genes
+        gc_n   = gc_content_percent(seq) if seq else 0
+        mw_n   = molecular_weight_dna(seq) if seq else 0
+        tm_e   = melting_temperature_tm(seq) if seq else 0
+        tm_w   = wallace_tm(seq) if seq else 0
+        gc_sub_n = "Low GC" if gc_n < 40 else ("Moderate" if gc_n <= 60 else "High GC")
+        pdb_live = ncbi.get("pdb_id", "")
 
-        st.markdown(f"""<div style='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;'>
-        {metric_card("Gene",ncbi['name'],ncbi['full_name'][:35]+"...")}
-        {metric_card("Chromosome",ncbi['chromosome'],f"Location: {ncbi['location']}")}
-        {metric_card("GC Content",f"{gc_n:.1f}%" if seq else "N/A",gc_sub_n)}
-        {metric_card("Sequence",f"{len(seq)} nt" if seq else "N/A",ncbi.get('refseq_id','')[:20])}
+        st.markdown(f"""
+        <div style='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;'>
+        {metric_card("Gene", ncbi['name'], ncbi['full_name'][:35]+"...")}
+        {metric_card("Chromosome", ncbi['chromosome'], f"Location: {ncbi['location']}")}
+        {metric_card("GC Content", f"{gc_n:.1f}%" if seq else "N/A", gc_sub_n)}
+        {metric_card("Sequence", f"{len(seq)} nt" if seq else "N/A", ncbi.get('refseq_id','')[:20])}
         </div>
         <div style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;'>
-        {metric_card("Molecular Weight",f"{mw_n:,.0f} Da" if seq else "N/A")}
-        {metric_card("Wallace Tm",f"{tm_w:.1f} °C" if seq else "N/A")}
-        {metric_card("Empirical Tm",f"{tm_e:.1f} °C" if seq else "N/A")}
-        </div>""", unsafe_allow_html=True)
+        {metric_card("Molecular Weight", f"{mw_n:,.0f} Da" if seq else "N/A")}
+        {metric_card("Wallace Tm", f"{tm_w:.1f} °C" if seq else "N/A")}
+        {metric_card("Empirical Tm", f"{tm_e:.1f} °C" if seq else "N/A")}
+        </div>
+        """, unsafe_allow_html=True)
 
-        src1,src2,src3=st.columns(3)
-        pdb_live=ncbi.get("pdb_id","")
-        with src1:
-            ul=f"<a href='{ncbi['uniprot_url']}' target='_blank' style='font-size:11px;color:#2563eb;'>View on UniProt ↗</a>" if ncbi.get("uniprot_url") else ""
-            st.markdown(f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'><div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>Protein (UniProt)</div><div style='font-size:13px;font-weight:600;color:#0a2540;margin-bottom:4px;'>{ncbi.get('protein_name','—')}</div>{ul}</div>", unsafe_allow_html=True)
-        with src2:
-            st.markdown(f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'><div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>Subcellular Location (UniProt)</div><div style='font-size:13px;font-weight:600;color:#0a2540;'>{ncbi.get('subcellular_location','—')}</div></div>", unsafe_allow_html=True)
-        with src3:
-            pl=f"<a href='https://www.rcsb.org/structure/{pdb_live}' target='_blank' style='font-size:11px;color:#2563eb;'>View on RCSB ↗</a>" if pdb_live else ""
-            st.markdown(f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'><div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>3D Structure (PDB)</div><div style='font-size:13px;font-weight:600;color:#0a2540;margin-bottom:4px;'>{pdb_live if pdb_live else 'Not found'}</div>{pl}</div>", unsafe_allow_html=True)
+        # ── TABS for NCBI gene ────────────────────────────────────────────
+        ncbi_tab1, ncbi_tab2, ncbi_tab3 = st.tabs(
+            ["Gene info", "Sequence analysis", "Translation & 3D"]
+        )
 
-        if ncbi.get("go_function") and ncbi["go_function"]!="—":
-            st.markdown(f"<div style='background:#f0fdf4;border-left:3px solid #16a34a;padding:10px 14px;font-size:13px;color:#14532d;margin:8px 0;'><strong>GO Molecular Function:</strong> {ncbi['go_function']}</div>", unsafe_allow_html=True)
+        with ncbi_tab1:
+            # UniProt + PDB cards
+            src1, src2, src3 = st.columns(3)
+            with src1:
+                ul = (f"<a href='{ncbi['uniprot_url']}' target='_blank' style='font-size:11px;color:#2563eb;'>View on UniProt ↗</a>"
+                      if ncbi.get("uniprot_url") else "")
+                st.markdown(
+                    f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'>"
+                    f"<div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>Protein (UniProt)</div>"
+                    f"<div style='font-size:13px;font-weight:600;color:#0a2540;margin-bottom:4px;'>{ncbi.get('protein_name','—')}</div>"
+                    f"{ul}</div>", unsafe_allow_html=True)
+            with src2:
+                st.markdown(
+                    f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'>"
+                    f"<div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>Subcellular Location</div>"
+                    f"<div style='font-size:13px;font-weight:600;color:#0a2540;'>{ncbi.get('subcellular_location','—')}</div></div>",
+                    unsafe_allow_html=True)
+            with src3:
+                pl = (f"<a href='https://www.rcsb.org/structure/{pdb_live}' target='_blank' style='font-size:11px;color:#2563eb;'>View on RCSB ↗</a>"
+                      if pdb_live else "")
+                st.markdown(
+                    f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;'>"
+                    f"<div style='font-size:11px;color:#8898b3;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;'>3D Structure (PDB)</div>"
+                    f"<div style='font-size:13px;font-weight:600;color:#0a2540;margin-bottom:4px;'>{pdb_live if pdb_live else 'Not found'}</div>"
+                    f"{pl}</div>", unsafe_allow_html=True)
 
-        st.markdown(section_header("Gene summary (NCBI)"), unsafe_allow_html=True)
-        st.markdown(f"<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:13px;color:#475569;line-height:1.8;'>{ncbi['summary']}</div>", unsafe_allow_html=True)
-        if ncbi["aliases"] and ncbi["aliases"]!="—":
-            st.markdown(f"<div style='margin-top:6px;font-size:12px;color:#8898b3;'><strong>Also known as:</strong> {ncbi['aliases']}</div>", unsafe_allow_html=True)
+            if ncbi.get("go_function") and ncbi["go_function"] != "—":
+                st.markdown(
+                    f"<div style='background:#f0fdf4;border-left:3px solid #16a34a;padding:10px 14px;"
+                    f"font-size:13px;color:#14532d;margin:8px 0;'>"
+                    f"<strong>GO Molecular Function:</strong> {ncbi['go_function']}</div>",
+                    unsafe_allow_html=True)
 
-        if seq:
-            st.markdown(section_header("Sequence analysis (RefSeq)"), unsafe_allow_html=True)
-            with st.expander("View fetched DNA sequence"): st.code(seq, language="text")
-            zoom_n=st.slider("Zoom",10,20,13,key="ncbi_zoom")
-            dna_h=max(140,(len(seq)//60+1)*(zoom_n+8)+60)
-            components.html(render_2d_sequence(seq,f"{ncbi['name']} — RefSeq sequence",font_size=zoom_n),height=dna_h,scrolling=True)
-            if st.button("Translate to protein",key="ncbi_translate"):
-                st.session_state["ncbi_protein"]=translate_dna_to_protein(seq)
-            if st.session_state.get("ncbi_protein"):
-                prot_n=st.session_state["ncbi_protein"]
-                pro_h=max(140,(len(prot_n)//40+1)*(zoom_n+10)+60)
-                components.html(render_2d_protein(prot_n,f"{ncbi['name']} — translated protein",font_size=zoom_n),height=pro_h,scrolling=True)
-                st.markdown(f"<div style='background:#eff6ff;border-left:3px solid #2563eb;padding:10px 14px;font-size:13px;color:#1e40af;margin-top:8px;'>{interpret_protein(prot_n)}</div>", unsafe_allow_html=True)
+            st.markdown(section_header("Gene summary (NCBI)"), unsafe_allow_html=True)
+            st.markdown(
+                f"<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;"
+                f"padding:14px;font-size:13px;color:#475569;line-height:1.8;'>{ncbi['summary']}</div>",
+                unsafe_allow_html=True)
+            if ncbi["aliases"] and ncbi["aliases"] != "—":
+                st.markdown(
+                    f"<div style='margin-top:6px;font-size:12px;color:#8898b3;'>"
+                    f"<strong>Also known as:</strong> {ncbi['aliases']}</div>",
+                    unsafe_allow_html=True)
+            st.markdown(f"[View full entry on NCBI ↗](https://www.ncbi.nlm.nih.gov/gene/{ncbi['ncbi_id']})")
 
-        if pdb_live:
-            st.markdown(section_header("3D protein structure (PDB)"), unsafe_allow_html=True)
-            if st.button("Load 3D structure",key="ncbi_3d_btn"): show_3d_protein(pdb_live)
+        with ncbi_tab2:
+            if seq:
+                with st.expander("View fetched DNA sequence"):
+                    st.code(seq, language="text")
+                zoom_n = st.slider("Zoom", 10, 20, 13, key="ncbi_zoom")
+                dna_h  = max(140, (len(seq) // 60 + 1) * (zoom_n + 8) + 60)
+                st.markdown("**2D DNA sequence viewer** — hover to see position & base")
+                components.html(
+                    render_2d_sequence(seq, f"{ncbi['name']} — RefSeq sequence", font_size=zoom_n),
+                    height=dna_h, scrolling=True)
 
-        st.markdown(f"[View full entry on NCBI ↗](https://www.ncbi.nlm.nih.gov/gene/{ncbi['ncbi_id']})")
+                # Thermodynamic metrics
+                st.markdown(section_header("Thermodynamic analysis"), unsafe_allow_html=True)
+                t1, t2, t3 = st.columns(3)
+                t1.metric("Molecular Weight", f"{mw_n:,.0f} Da")
+                t2.metric("Wallace Tm",       f"{tm_w:.1f} °C")
+                t3.metric("Empirical Tm",     f"{tm_e:.1f} °C")
+                st.caption(interpret_gc(gc_n))
+            else:
+                st.info("No sequence data available for this gene from NCBI.")
+
+        with ncbi_tab3:
+            if seq:
+                if st.button("Translate to protein", key="ncbi_translate"):
+                    st.session_state["ncbi_protein"] = translate_dna_to_protein(seq)
+
+                if st.session_state.get("ncbi_protein"):
+                    prot_n = st.session_state["ncbi_protein"]
+                    zoom_p = st.slider("Zoom", 10, 20, 13, key="ncbi_prot_zoom")
+                    pro_h  = max(140, (len(prot_n) // 40 + 1) * (zoom_p + 10) + 60)
+                    st.markdown("**2D Protein sequence viewer** — hover to see position & amino acid")
+                    components.html(
+                        render_2d_protein(prot_n, f"{ncbi['name']} — translated protein", font_size=zoom_p),
+                        height=pro_h, scrolling=True)
+                    st.markdown(
+                        f"<div style='background:#eff6ff;border-left:3px solid #2563eb;padding:10px 14px;"
+                        f"font-size:13px;color:#1e40af;margin-top:8px;'>{interpret_protein(prot_n)}</div>",
+                        unsafe_allow_html=True)
+
+                    aa_c, hyd_c = st.columns(2)
+                    with aa_c:
+                        st.markdown("**Amino acid composition**")
+                        st.bar_chart(amino_acid_composition(prot_n))
+                    with hyd_c:
+                        hydro = average_hydrophobicity(prot_n)
+                        st.markdown(
+                            f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;"
+                            f"padding:16px 18px;margin-top:24px;'>"
+                            f"<div style='font-size:11px;color:#8898b3;text-transform:uppercase;"
+                            f"letter-spacing:0.5px;font-weight:600;margin-bottom:6px;'>Hydrophobicity</div>"
+                            f"<div style='font-size:2rem;font-weight:700;color:#0a2540;'>{hydro:.2f}</div>"
+                            f"<div style='font-size:12px;color:#8898b3;margin-top:4px;'>"
+                            f"{'Hydrophobic — likely membrane-associated' if hydro>0 else 'Hydrophilic — likely soluble/cytoplasmic'}"
+                            f"</div></div>", unsafe_allow_html=True)
+            else:
+                st.info("No sequence available for translation.")
+
+            if pdb_live:
+                st.markdown(section_header("3D protein structure (PDB)"), unsafe_allow_html=True)
+                if st.button("Load 3D structure", key="ncbi_3d_btn"):
+                    show_3d_protein(pdb_live)
+                st.caption(f"PDB: {pdb_live} · scroll to zoom · drag to rotate")
+            else:
+                st.info("No PDB structure found for this gene.")
+
         st.stop()
-
+        
     # ── LOCAL GENE PROFILE ───────────────────────────────────────────────────
     selected_gene=next(g for g in genes if g["gene"]==selected_id)
     seq=normalize_seq(selected_gene["sequence"]); gc=gc_content_percent(seq)
