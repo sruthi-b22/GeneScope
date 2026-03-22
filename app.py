@@ -244,6 +244,32 @@ def load_genes():
     return genes
 
 def normalize_seq(seq): return "".join(str(seq or "").upper().split())
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_full_sequence_for_gene(gene_symbol, refseq_id=""):
+    """Fetch full mRNA sequence from NCBI for a local gene if sequence is short."""
+    try:
+        # Try RefSeq ID first (fastest)
+        if refseq_id and refseq_id != "—":
+            clean_id = refseq_id.split(".")[0] if "." in refseq_id else refseq_id
+            fh = Entrez.efetch(db="nucleotide", id=clean_id, rettype="fasta", retmode="text")
+            fasta = fh.read(); fh.close()
+            lines = fasta.strip().split("\n")
+            seq = "".join(lines[1:])
+            if seq: return normalize_seq(seq)
+
+        # Fall back to gene name search
+        sh = Entrez.esearch(db="nucleotide",
+            term=f"{gene_symbol}[Gene Name] AND Homo sapiens[Organism] AND mRNA[Filter] AND RefSeq[Filter]",
+            retmax=1)
+        sr = Entrez.read(sh); sh.close()
+        if sr["IdList"]:
+            fh = Entrez.efetch(db="nucleotide", id=sr["IdList"][0], rettype="fasta", retmode="text")
+            fasta = fh.read(); fh.close()
+            lines = fasta.strip().split("\n")
+            seq = "".join(lines[1:])
+            if seq: return normalize_seq(seq)
+    except: pass
+    return None
 def gc_content_percent(s):
     seq = normalize_seq(s); return 0.0 if not seq else sum(1 for c in seq if c in "GC") / len(seq) * 100
 def molecular_weight_dna(s): return 330.0 * len(normalize_seq(s))
