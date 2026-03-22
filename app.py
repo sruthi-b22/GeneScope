@@ -307,9 +307,11 @@ def main():
         search_term=st.text_input("","",placeholder="Search gene or disease — e.g. BRCA1, TP53, Down syndrome, cystic fibrosis...")
         filtered_genes=[g for g in gene_ids if search_term.upper() in g.upper()]
         if filtered_genes:
-            selected_id=st.selectbox("Matching genes",options=filtered_genes,index=0)
+            selected_id = st.selectbox("Matching genes", options=filtered_genes, index=0)
+            # Clear any previous NCBI result when a local gene is selected
+            st.session_state["ncbi_gene"] = None
         else:
-            selected_id=gene_ids[0]
+            selected_id = gene_ids[0]
             if search_term:
                 with st.spinner("Searching NCBI, UniProt & PDB..."):
                     ncbi,error=fetch_from_ncbi(search_term)
@@ -326,7 +328,11 @@ def main():
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ── NCBI LIVE PROFILE ────────────────────────────────────────────────────
-    if "ncbi_gene" in st.session_state and st.session_state["ncbi_gene"] and not filtered_genes and search_term:
+    if ("ncbi_gene" in st.session_state 
+        and st.session_state["ncbi_gene"] 
+        and not filtered_genes 
+        and search_term 
+        and search_term == st.session_state.get("ncbi_search_term", "")):
         ncbi=st.session_state["ncbi_gene"]; sq=st.session_state.get("ncbi_search_term",search_term)
         seq=normalize_seq(ncbi.get("sequence",""))
         if sq.lower() not in ncbi["name"].lower():
@@ -575,10 +581,35 @@ def main():
             ov1.metric("Original protein length",f"{orig_len} aa")
             ov2.metric("Mutated protein length",f"{mut_len} aa",delta=f"{len_diff:+d} aa")
             ov3.metric("GC content change",f"{mut_gc:.1f}%",delta=f"{mut_gc-orig_gc:+.1f}%")
-            if res["original_protein"]==res["mutated_protein"]: st.success("Silent mutation — protein is unchanged (synonymous).")
-            elif len_diff<0: st.error("Frameshift likely — protein is shorter. Could cause loss of function.")
-            elif len_diff>0: st.warning("Protein is longer than expected — possible read-through mutation.")
-            else: st.warning("Missense mutation — protein sequence changed but same length.")
+            if res["original_protein"] == res["mutated_protein"]:
+                st.success("✅ Silent mutation (synonymous) — the protein sequence is completely unchanged. The DNA change did not alter any amino acid, meaning this mutation has no effect on protein function.")
+            elif len_diff < 0:
+                st.error(
+                    f"🔴 Frameshift mutation — protein is shorter by {abs(len_diff)} amino acids.\n\n"
+                    "A frameshift occurs when a deletion or insertion shifts the reading frame, causing the ribosome to read different codons downstream. "
+                    "This usually introduces a premature stop codon, producing a truncated, non-functional protein. "
+                    "Frameshift mutations are often the most severe type — they can completely destroy protein function and are associated with serious genetic diseases."
+                )
+            elif len_diff > 0:
+                st.warning(
+                    f"🟡 Read-through mutation — protein is longer by {len_diff} amino acids.\n\n"
+                    "An insertion before a stop codon can cause the ribosome to read past the normal stop, producing a longer protein with extra amino acids at the C-terminus. "
+                    "This can disrupt protein folding and may affect function depending on the location of the insertion."
+                )
+            else:
+                # Same length but different sequence = missense
+                # Find which positions differ
+                diffs = [(i+1, res["original_protein"][i], res["mutated_protein"][i])
+                         for i in range(min(len(res["original_protein"]), len(res["mutated_protein"])))
+                         if res["original_protein"][i] != res["mutated_protein"][i]]
+                diff_str = ", ".join([f"position {p}: {o}→{m}" for p,o,m in diffs[:5]])
+                st.warning(
+                    f"🟠 Missense mutation — protein sequence changed but same length ({mut_len} aa).\n\n"
+                    f"Changed amino acids: {diff_str if diff_str else 'see 2D viewer above'}.\n\n"
+                    "A missense mutation substitutes one amino acid for another. The impact depends on the chemical properties of the original vs new amino acid. "
+                    "Conservative substitutions (e.g. one hydrophobic for another) may have little effect, while non-conservative changes (e.g. charged to neutral) can drastically alter protein folding and function. "
+                    "Many disease-causing mutations are missense — for example, the HBB Glu6Val substitution causes sickle cell anaemia."
+                )
 
 if __name__=="__main__":
     main()
