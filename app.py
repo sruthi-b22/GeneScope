@@ -845,6 +845,19 @@ def main():
     # LOCAL GENE PROFILE
     selected_gene    = next(g for g in genes if g["gene"] == selected_id)
     seq              = normalize_seq(selected_gene["sequence"])
+
+    # Auto-fetch full sequence if local sequence is short (under 300 bp)
+    if len(seq) < 300:
+        cached_key = f"full_seq_{selected_gene['gene']}"
+        if cached_key not in st.session_state:
+            with st.spinner(f"Fetching full sequence for {selected_gene['gene']} from NCBI..."):
+                full_seq = fetch_full_sequence_for_gene(
+                    selected_gene["gene"],
+                    selected_gene.get("refseq_mrna", "")
+                )
+            st.session_state[cached_key] = full_seq or seq
+        seq = st.session_state[cached_key]
+
     gc               = gc_content_percent(seq)
     mw               = molecular_weight_dna(seq)
     tm_empirical     = melting_temperature_tm(seq)
