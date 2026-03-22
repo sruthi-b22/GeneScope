@@ -213,7 +213,7 @@ def fetch_from_ncbi(query):
             if lines:
                 header = lines[0]
                 refseq_id = header.split("|")[1] if "|" in header and len(header.split("|")) > 1 else header.split()[0].replace(">", "")
-            dna_sequence = "".join(lines[1:])[:500]
+            dna_sequence = "".join(lines[1:])
         uniprot_data = fetch_from_uniprot(gene_symbol)
         uniprot_acc  = uniprot_data["accession"] if uniprot_data else ""
         pdb          = fetch_pdb_for_gene(gene_symbol, uniprot_acc)
@@ -440,11 +440,11 @@ def render_mutation_simulator(seq, pdb_id, key_prefix="local"):
         st.markdown(section_header("DNA — before vs after"), unsafe_allow_html=True)
         d1, d2 = st.columns(2)
         with d1:
-            dh = max(140, (len(res["original_seq"]) // 60 + 1) * (zoom_m + 8) + 60)
+            dh = min(600, max(140, (len(res["original_seq"]) // 60 + 1) * (zoom_m + 8) + 60))
             components.html(render_2d_sequence(res["original_seq"], "Original DNA", highlight_pos=position, font_size=zoom_m), height=dh, scrolling=True)
             st.caption(f"Length: {len(res['original_seq'])} bp")
         with d2:
-            dh2 = max(140, (len(res["mutated_seq"]) // 60 + 1) * (zoom_m + 8) + 60)
+            dh2 = min(600, max(140, (len(res["mutated_seq"]) // 60 + 1) * (zoom_m + 8) + 60))
             components.html(render_2d_sequence(res["mutated_seq"], "Mutated DNA", highlight_pos=position, font_size=zoom_m), height=dh2, scrolling=True)
             st.caption(f"Length: {len(res['mutated_seq'])} bp")
         st.markdown(section_header("Protein — before vs after"), unsafe_allow_html=True)
@@ -562,7 +562,7 @@ def render_translation(seq, key_prefix="local"):
         prot = st.session_state[prot_key]
         zoom_t = st.slider("Zoom", 10, 20, 13, key=f"{key_prefix}_prot_zoom")
         st.markdown("**2D DNA sequence viewer** — hover to see position & base")
-        dna_h = max(140, (len(seq) // 60 + 1) * (zoom_t + 8) + 60)
+        dna_h = min(600, max(140, (len(seq) // 60 + 1) * (zoom_t + 8) + 60))
         components.html(render_2d_sequence(seq, "Original DNA", font_size=zoom_t), height=dna_h, scrolling=True)
         st.markdown("**2D Protein sequence viewer** — hover to see position & amino acid")
         pro_h = max(140, (len(prot) // 40 + 1) * (zoom_t + 10) + 60)
