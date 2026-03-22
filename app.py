@@ -21,11 +21,44 @@ except ImportError:
     np = None; px = None; go = None
 
 CONSERVATION = {
-    "HBB":  {"Pan troglodytes": 0.99, "Mus musculus": 0.87},
-    "BRCA1":{"Pan troglodytes": 0.99, "Mus musculus": 0.56},
-    "HTT":  {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
-    "CFTR": {"Pan troglodytes": 0.98, "Mus musculus": 0.78},
-    "TP53": {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
+    # Your original 5
+    "HBB":   {"Pan troglodytes": 0.99, "Mus musculus": 0.87},
+    "BRCA1": {"Pan troglodytes": 0.99, "Mus musculus": 0.56},
+    "HTT":   {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
+    "CFTR":  {"Pan troglodytes": 0.98, "Mus musculus": 0.78},
+    "TP53":  {"Pan troglodytes": 0.99, "Mus musculus": 0.80},
+    # Disease map genes
+    "PAH":    {"Pan troglodytes": 0.99, "Mus musculus": 0.82},
+    "DYRK1A": {"Pan troglodytes": 0.99, "Mus musculus": 0.96},
+    "APP":    {"Pan troglodytes": 0.99, "Mus musculus": 0.97},
+    "PARK2":  {"Pan troglodytes": 0.99, "Mus musculus": 0.84},
+    "FBN1":   {"Pan troglodytes": 0.99, "Mus musculus": 0.84},
+    "GBA":    {"Pan troglodytes": 0.99, "Mus musculus": 0.88},
+    "HEXA":   {"Pan troglodytes": 0.98, "Mus musculus": 0.83},
+    "ATP7B":  {"Pan troglodytes": 0.99, "Mus musculus": 0.85},
+    "F8":     {"Pan troglodytes": 0.97, "Mus musculus": 0.74},
+    "F9":     {"Pan troglodytes": 0.97, "Mus musculus": 0.77},
+    "MLH1":   {"Pan troglodytes": 0.99, "Mus musculus": 0.85},
+    "RB1":    {"Pan troglodytes": 0.99, "Mus musculus": 0.91},
+    "EGFR":   {"Pan troglodytes": 0.99, "Mus musculus": 0.93},
+    "INS":    {"Pan troglodytes": 0.97, "Mus musculus": 0.87},
+    "DMD":    {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
+    "FMR1":   {"Pan troglodytes": 0.99, "Mus musculus": 0.97},
+    "MECP2":  {"Pan troglodytes": 0.99, "Mus musculus": 0.96},
+    "NF1":    {"Pan troglodytes": 0.99, "Mus musculus": 0.98},
+    "TSC1":   {"Pan troglodytes": 0.99, "Mus musculus": 0.91},
+    "SMN1":   {"Pan troglodytes": 0.99, "Mus musculus": 0.82},
+    "FGFR3":  {"Pan troglodytes": 0.99, "Mus musculus": 0.98},
+    "COL5A1": {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
+    "COL1A1": {"Pan troglodytes": 0.99, "Mus musculus": 0.90},
+    "FANCA":  {"Pan troglodytes": 0.98, "Mus musculus": 0.72},
+    "ATM":    {"Pan troglodytes": 0.99, "Mus musculus": 0.84},
+    "BLM":    {"Pan troglodytes": 0.99, "Mus musculus": 0.73},
+    "XPA":    {"Pan troglodytes": 0.99, "Mus musculus": 0.72},
+    "WRN":    {"Pan troglodytes": 0.99, "Mus musculus": 0.75},
+    "BRCA2":  {"Pan troglodytes": 0.99, "Mus musculus": 0.59},
+    "KRAS":   {"Pan troglodytes": 1.00, "Mus musculus": 1.00},
+    "PTEN":   {"Pan troglodytes": 1.00, "Mus musculus": 1.00},
 }
 
 DISEASE_GENE_MAP = {
@@ -522,6 +555,10 @@ def render_visualization(seq, gc, selected_gene_name, description, species_map=N
             xaxis_title="Segment column", yaxis_title="Segment row",
             font=dict(family="Inter,sans-serif",color="#0a2540"), margin=dict(t=35,l=30,r=30,b=30))
         st.plotly_chart(hm, use_container_width=True)
+    # Auto-lookup conservation if not passed in (for NCBI-searched genes)
+    if not species_map and selected_gene_name:
+        species_map = CONSERVATION.get(selected_gene_name.upper(), {}) or None
+
     if species_map:
         st.markdown(section_header("BLAST — sequence conservation"), unsafe_allow_html=True)
         cdf = pd.DataFrame({"Species": list(species_map.keys()),
@@ -724,7 +761,8 @@ def main():
 
         with tab_viz:
             if seq:
-                render_visualization(seq, gc, ncbi["name"], ncbi.get("summary", ""), species_map=None)
+                render_visualization(seq, gc, ncbi["name"], ncbi.get("summary", ""),
+                                     species_map=CONSERVATION.get(ncbi["name"].upper(), {}) or None)
             else:
                 st.warning("No sequence available — visualization requires DNA sequence data.")
 
