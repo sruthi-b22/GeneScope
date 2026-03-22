@@ -599,15 +599,24 @@ def main():
         else:
             selected_id = gene_ids[0]
             if search_term:
-                with st.spinner("Searching NCBI, UniProt & PDB..."):
-                    ncbi, error = fetch_from_ncbi(search_term)
-                if ncbi:
-                    st.session_state["ncbi_gene"] = ncbi
-                    st.session_state["ncbi_search_term"] = search_term
-                    st.success(f"🌐 Found: **{ncbi['name']}** — {ncbi['full_name']}")
-                else:
-                    st.session_state["ncbi_gene"] = None
-                    st.warning(f"⚠️ {error}")
+                # ── KEY FIX: only fetch if this is a NEW search ──────────
+                already_fetched = (
+                    st.session_state.get("ncbi_search_term", "") == search_term
+                    and st.session_state.get("ncbi_gene") is not None
+                )
+                if not already_fetched:
+                    with st.spinner("Searching NCBI, UniProt & PDB..."):
+                        ncbi, error = fetch_from_ncbi(search_term)
+                    if ncbi:
+                        st.session_state["ncbi_gene"] = ncbi
+                        st.session_state["ncbi_search_term"] = search_term
+                    else:
+                        st.session_state["ncbi_gene"] = None
+                        st.warning(f"⚠️ {error}")
+                # Show the found badge without re-fetching
+                if st.session_state.get("ncbi_gene"):
+                    ncbi_cached = st.session_state["ncbi_gene"]
+                    st.success(f"🌐 Found: **{ncbi_cached['name']}** — {ncbi_cached['full_name']}")
     with nav3:
         st.markdown(f"<div style='text-align:right;padding-top:6px;'><span style='background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;'>🧬 {len(gene_ids)} genes</span></div>", unsafe_allow_html=True)
         if st.button("About"):
