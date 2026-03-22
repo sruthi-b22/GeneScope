@@ -340,6 +340,7 @@ def show_3d_protein(pdb_id):
     st.caption(f"PDB: {pdb_id} · Scroll to zoom · Drag to rotate · Right-click to pan")
     st.markdown(f"[View on RCSB PDB ↗](https://www.rcsb.org/structure/{pdb_id})")
 
+# ── FIX: no st.rerun() — button click already triggers rerun naturally ────────
 def render_3d_button(pdb_id, key_prefix):
     loaded_key = f"{key_prefix}_3d_loaded"
     pdb_key    = f"{key_prefix}_3d_pdb"
@@ -348,13 +349,13 @@ def render_3d_button(pdb_id, key_prefix):
     if st.session_state[pdb_key] != pdb_id:
         st.session_state[loaded_key] = False
         st.session_state[pdb_key] = pdb_id
-    if not st.session_state[loaded_key]:
+    if st.session_state[loaded_key]:
+        show_3d_protein(pdb_id)
+    else:
         if st.button("Load 3D structure", key=f"{key_prefix}_3d_btn"):
             st.session_state[loaded_key] = True
-            st.rerun()
+            # No st.rerun() — the button click itself triggers the rerun
         st.caption(f"PDB ID: {pdb_id} — click to load · scroll to zoom · drag to rotate")
-    else:
-        show_3d_protein(pdb_id)
 
 def metric_card(label, value, sub=""):
     s = f"<div style='font-size:12px;color:#8898b3;margin-top:4px;'>{sub}</div>" if sub else ""
@@ -567,6 +568,15 @@ def main():
     </style>""", unsafe_allow_html=True)
 
     genes = load_genes(); gene_ids = [g["gene"] for g in genes]
+
+    # ── Protect all session state keys from being wiped on rerun ─────────────
+    for _k in ["local_protein", "ncbi_protein", "local_mutation_result", "ncbi_mutation_result",
+               "local_3d_loaded", "ncbi_3d_loaded", "local_3d_pdb", "ncbi_3d_pdb",
+               "ncbi_gene", "ncbi_search_term"]:
+        if _k not in st.session_state:
+            st.session_state[_k] = None if "_loaded" not in _k else False
+            if _k in ("ncbi_search_term", "local_3d_pdb", "ncbi_3d_pdb"):
+                st.session_state[_k] = ""
 
     st.markdown("<div style='background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 0 10px;margin-bottom:20px;'>", unsafe_allow_html=True)
     nav1, nav2, nav3 = st.columns([2, 3, 1])
